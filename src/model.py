@@ -61,9 +61,7 @@ class QTrainer:
                 action_index = 0  # Default to first action as a failsafe
 
             target[idx][action_index] = Q_new
-
-        
-        
+  
         # 2: Q_new = r + y * max(next_predicted Q value) -> Q-learning formula
         # pred.clone() -> Q values
         # preds[argmax(action)] = Q_new
