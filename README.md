@@ -14,21 +14,24 @@
 
 ### 1️⃣ Clone the Repository
 
+```sh 
 git clone <your-repo-url>
 cd Learn2Slither
+```
 
 ### 2️⃣ Create & Activate Virtual Environment
-Make
+``` sh
+Make install
 . .venv/bin/activate
-
-### 3️⃣ Install Dependencies
-pip install -r requirements.txt
-
+```
+it will automatically setup your .venv and install all the dependencies
 ## 🏗️ Running the Project
 
 ### 1️⃣ Train the AI
 Train the agent with a specified number of sessions:
+```py
 python src/train.py --sessions 500
+```
 
 This will generate trained models inside the /models/ folder.
 
