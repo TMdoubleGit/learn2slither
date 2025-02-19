@@ -60,10 +60,10 @@ class Agent:
             dir_d,
 
             # Food location
-            game.food.x < game.head.x,  # food left
-            game.food.x > game.head.x,  # food right
-            game.food.y < game.head.y,  # food up
-            game.food.y > game.head.y  # food down
+            game.food_g.x < game.head.x,  # food left
+            game.food_g.x > game.head.x,  # food right
+            game.food_g.y < game.head.y,  # food up
+            game.food_g.y > game.head.y  # food down
             ]
         return np.array(state, dtype=int)
 

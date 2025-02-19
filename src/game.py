@@ -7,12 +7,6 @@ import numpy as np
 pygame.init()
 font = pygame.font.Font('arial.ttf', 25)
 
-# reset
-# reward
-# play(action) -> direction
-# game_iteration
-# is_collision
-
 
 class Direction(Enum):
     RIGHT = 1
@@ -25,10 +19,13 @@ WHITE = (255, 255, 255)
 RED = (200,0,0)
 BLUE1 = (0, 0, 255)
 BLUE2 = (0, 100, 255)
+GREEN1 = (0, 150, 0)
+GREEN2 = (0, 255, 0)
 BLACK = (0,0,0)
 
 BLOCK_SIZE = 20
 SPEED = 20
+
 
 class SnakeGameAI:
     
@@ -50,17 +47,30 @@ class SnakeGameAI:
                       Point(self.head.x-(2*BLOCK_SIZE), self.head.y)]
         
         self.score = 0
-        self.food = None
-        self._place_food()
+        self.food_g = None
+        self.food_b = None
+        self._place_food_g()
+        self._place_food_b()
         self.frame_iteration = 0
 
 
-    def _place_food(self):
+    def _place_food_g(self, u=0):
         x = random.randint(0, (self.w-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE 
         y = random.randint(0, (self.h-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE
-        self.food = Point(x, y)
-        if self.food in self.snake:
-            self._place_food()
+        while x == u:
+            x = random.randint(0, (self.w-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE
+        self.food_g = Point(x, y)
+        if self.food_g in self.snake:
+            self._place_food_g(u)
+
+    def _place_food_b(self, x=0):
+        u = random.randint(0, (self.w-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE 
+        v = random.randint(0, (self.h-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE
+        while u == x:
+            u = random.randint(0, (self.w-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE 
+        self.food_b = Point(u, v)
+        if self.food_b in self.snake:
+            self._place_food_b(x)
         
     def play_step(self, action):
         self.frame_iteration += 1
@@ -80,10 +90,14 @@ class SnakeGameAI:
             reward = -10
             return reward, game_over, self.score
             
-        if self.head == self.food:
+        if self.head == self.food_g:
             self.score += 1
             reward = 10
-            self._place_food()
+            self._place_food_g()
+        if self.head == self.food_b:
+            self.score -= 1
+            reward = -5
+            self._place_food_b()
         else:
             self.snake.pop()
         
@@ -108,7 +122,11 @@ class SnakeGameAI:
             pygame.draw.rect(self.display, BLUE1, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
             pygame.draw.rect(self.display, BLUE2, pygame.Rect(pt.x+4, pt.y+4, 12, 12))
             
-        pygame.draw.rect(self.display, RED, pygame.Rect(self.food.x, self.food.y, BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(self.display, GREEN1, pygame.Rect(self.food_g.x, self.food_g.y, BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(self.display, GREEN2, pygame.Rect(self.food_g.x+4, self.food_g.y+4, 12, 12))
+
+        pygame.draw.rect(self.display, RED, pygame.Rect(self.food_b.x, self.food_b.y, BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(self.display, RED, pygame.Rect(self.food_b.x+4, self.food_b.y+4, 12, 12))
         
         text = font.render("Score: " + str(self.score), True, WHITE)
         self.display.blit(text, [0, 0])
