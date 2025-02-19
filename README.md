@@ -13,7 +13,7 @@
 ## 🎮 Installation & Setup
 
 ### 1️⃣ Clone the Repository
-```sh
+
 git clone <your-repo-url>
 cd Learn2Slither
 
