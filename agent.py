@@ -34,6 +34,11 @@ class Agent:
         dir_u = game.direction == Direction.UP
         dir_d = game.direction == Direction.DOWN
 
+        food_left = any(apple[0] < head.x // BLOCK_SIZE for apple in game.green_apples)
+        food_right = any(apple[0] > head.x // BLOCK_SIZE for apple in game.green_apples)
+        food_up = any(apple[1] < head.y // BLOCK_SIZE for apple in game.green_apples)
+        food_down = any(apple[1] > head.y // BLOCK_SIZE for apple in game.green_apples)
+
         state = [
             # Danger straight
             (dir_r and game.is_collision(point_r)) or
@@ -60,10 +65,10 @@ class Agent:
             dir_d,
 
             # Food location
-            game.food_g.x < game.head.x,  # food left
-            game.food_g.x > game.head.x,  # food right
-            game.food_g.y < game.head.y,  # food up
-            game.food_g.y > game.head.y  # food down
+            food_left,
+            food_right,
+            food_up,
+            food_down
             ]
         return np.array(state, dtype=int)
 
