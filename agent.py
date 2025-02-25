@@ -5,10 +5,11 @@ from collections import deque
 from src.game import SnakeGameAI, Direction, Point
 from src.model import Linear_QNet, QTrainer
 from src.helper import plot
+import os
 
 
 MAX_MEMORY = 100_000
-BATCH_SIZE = 1000
+BATCH_SIZE = 256
 BLOCK_SIZE = 20
 LR = 0.001
 
@@ -17,7 +18,7 @@ class Agent:
     def __init__(self):
         self.n_games = 0
         self.epsilon = 0 # controls the randomness
-        self.gamma = 0.9 # discount rate
+        self.gamma = 0.95 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft() if we exceed memory
         self.model = Linear_QNet(11, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
@@ -34,10 +35,15 @@ class Agent:
         dir_u = game.direction == Direction.UP
         dir_d = game.direction == Direction.DOWN
 
-        food_left = any(apple[0] < head.x // BLOCK_SIZE for apple in game.green_apples)
-        food_right = any(apple[0] > head.x // BLOCK_SIZE for apple in game.green_apples)
-        food_up = any(apple[1] < head.y // BLOCK_SIZE for apple in game.green_apples)
-        food_down = any(apple[1] > head.y // BLOCK_SIZE for apple in game.green_apples)
+        if game.green_apples:
+            closest_apple = min(game.green_apples, key=lambda apple: abs(apple[0] - head.x // BLOCK_SIZE) + abs(apple[1] - head.y // BLOCK_SIZE))
+        else:
+            closest_apple = (head.x // BLOCK_SIZE, head.y // BLOCK_SIZE)
+        
+        food_left = closest_apple[0] < head.x // BLOCK_SIZE
+        food_right = closest_apple[0] > head.x // BLOCK_SIZE
+        food_up = closest_apple[1] < head.y // BLOCK_SIZE
+        food_down = closest_apple[1] > head.y // BLOCK_SIZE
 
         state = [
             # Danger straight
@@ -91,7 +97,7 @@ class Agent:
 
     def get_action(self, state):
         # random moves: tradeoff exploration / exploitation
-        self.epsilon = 80 - self.n_games
+        self.epsilon = max(10, 80 - self.n_games)
         final_move = [0, 0, 0]
         if random.randint(0, 200) < self.epsilon:
             move=random.randint(0,2)
@@ -134,7 +140,18 @@ def train():
 
             if score > record:
                 record = score
-                # agent.model.save()
+            
+            if agent.n_games % 10 == 0:
+                model_folder_path = './models'
+                if not os.path.exists(model_folder_path):
+                    os.makedirs(model_folder_path)
+                new_dir_path = "./models/game_" + str(agent.n_games)
+                if not os.path.exists(new_dir_path):
+                    os.makedirs(new_dir_path)
+                agent.model.save(f"./models/game_{agent.n_games}/model_{agent.n_games}.pth")
+                plot_path = f"{new_dir_path}/plot_{agent.n_games}.png"
+                plot(plot_score, plot_mean_score, save_path=plot_path)
+
 
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
