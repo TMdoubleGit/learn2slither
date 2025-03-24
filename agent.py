@@ -2,15 +2,16 @@ import torch
 import random
 import numpy as np
 from collections import deque
+from src.displayer import Displayer
 from src.game import SnakeGameAI, Direction, Point
 from src.model import Linear_QNet, QTrainer
 from src.helper import plot
+from src.constants import BLOCK_SIZE
 import os
 
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 256
-BLOCK_SIZE = 20
 LR = 0.001
 
 class Agent:
@@ -114,10 +115,24 @@ def train():
     record = 0
     agent = Agent()
     game = SnakeGameAI()
+    displayer = Displayer(game)
+
     while True:
         state_old = agent.get_state(game)
 
         final_move = agent.get_action(state_old)
+
+        action_dir = Direction.RIGHT
+        if np.array_equal(final_move, [1, 0, 0]):
+            action_dir = game.direction
+        elif np.array_equal(final_move, [0, 1, 0]):
+            clockwise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+            action_dir = clockwise[(clockwise.index(game.direction) + 1) % 4]
+        elif np.array_equal(final_move, [0, 0, 1]):
+            clockwise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+            action_dir = clockwise[(clockwise.index(game.direction) - 1) % 4]
+
+        displayer.display(action_dir)
 
         reward, done, score = game.play_step(final_move)
         state_new = agent.get_state(game)

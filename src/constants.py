@@ -16,12 +16,13 @@ SNAKE_BODY = BLUE + 'S' + RESET
 EMPTY = '0'
 WALL = GRAY + 'W' + RESET
 DEAD_SNAKE = GRAY + 'X' + RESET
+BLOCK_SIZE = 20
 
 # Constants for the rewards
-NEGATIVE_REWARD = -10  # Manger une pomme rouge
-POSITIVE_REWARD = 150  # Manger une pomme verte
-SMALLER_NEGATIVE_REWARD = -1  # Se deplacer
-BIGGER_NEGATIVE_REWARD = -100  # Collision
+NEGATIVE_REWARD = -10
+POSITIVE_REWARD = 150
+SMALLER_NEGATIVE_REWARD = -1
+BIGGER_NEGATIVE_REWARD = -100
 
 # Constants for the training and gaming loops
 TRAINING_LOOP = True
