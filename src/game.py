@@ -33,14 +33,14 @@ class SnakeGameAI:
     nb_red_apples = 1
     nb_green_apples = 2
 
-    def __init__(self, w=640, h=480):
+    def __init__(self, w=BLOCK_SIZE * 12, h=BLOCK_SIZE * 12):
         self.w = w
         self.h = h
 
         self.board = [
-            [WALL if (x == 0 or x == self.w - 1 or y == 0 or y == self.h - 1) else EMPTY
-             for x in range(self.w)]
-            for y in range(self.h)
+            [WALL if (x == 0 or x == 11 or y == 0 or y == 11) else EMPTY
+             for x in range(self.w // BLOCK_SIZE)]
+            for y in range(self.h // BLOCK_SIZE)
             ]
 
         self.display = pygame.display.set_mode((self.w, self.h))
@@ -53,12 +53,12 @@ class SnakeGameAI:
         self.direction = Direction.RIGHT
 
         self.board = [
-            [WALL if (x == 0 or x == self.w - 1 or y == 0 or y == self.h - 1) else EMPTY
-             for x in range(self.w)]
-            for y in range(self.h)
+            [WALL if (x == 0 or x == 11 or y == 0 or y == 11) else EMPTY
+             for x in range(self.w // BLOCK_SIZE)]
+            for y in range(self.h // BLOCK_SIZE)
             ]
 
-        self.head = Point(self.w/2, self.h/2)
+        self.head = Point(5 * BLOCK_SIZE, 5 * BLOCK_SIZE)
         self.snake = [self.head, 
                       Point(self.head.x-BLOCK_SIZE, self.head.y),
                       Point(self.head.x-(2*BLOCK_SIZE), self.head.y)]
@@ -129,7 +129,7 @@ class SnakeGameAI:
                 pygame.quit()
                 quit()
         
-        self._move(action)
+        new_direction = self._move(action)
         self.snake.insert(0, self.head)
         
         reward = 0
@@ -140,7 +140,7 @@ class SnakeGameAI:
         if self.is_collision() or self.frame_iteration > 100*len(self.snake):
             self.game_over("Another brick in the wall.... ")
             reward = BIGGER_NEGATIVE_REWARD
-            return reward, self.is_game_over, self.score
+            return reward, self.is_game_over, self.score, new_direction
             
         if (head_grid_x, head_grid_y) in self.green_apples:
             self.score += 1
@@ -155,7 +155,7 @@ class SnakeGameAI:
             if len(self.snake) == 0:
                 self.game_over("You ate a red apple and died")
                 reward = BIGGER_NEGATIVE_REWARD
-                return reward, self.is_game_over, self.score
+                return reward, self.is_game_over, self.score, new_direction
             self.red_apples.remove((head_grid_x, head_grid_y))
             self.place_new_apple(RED_APPLE)
         
@@ -165,7 +165,7 @@ class SnakeGameAI:
         
         self._update_ui()
         self.clock.tick(SPEED)
-        return reward, self.is_game_over, self.score
+        return reward, self.is_game_over, self.score, new_direction
     
     def is_collision(self, pt=None):
         if pt is None:
@@ -220,4 +220,4 @@ class SnakeGameAI:
             y -= BLOCK_SIZE
             
         self.head = Point(x, y)
-            
+        return self.direction

@@ -134,7 +134,7 @@ def train():
 
         displayer.display(action_dir)
 
-        reward, done, score = game.play_step(final_move)
+        reward, done, score, new_direction = game.play_step(final_move)
         state_new = agent.get_state(game)
 
         agent.train_short_memory(state_old, final_move, reward, state_new, done)
