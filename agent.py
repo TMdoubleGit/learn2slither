@@ -8,6 +8,7 @@ from src.model import Linear_QNet, QTrainer
 from src.helper import plot
 from src.constants import BLOCK_SIZE
 import os
+import argparse
 
 
 MAX_MEMORY = 100_000
@@ -108,7 +109,7 @@ class Agent:
         final_move[move] = 1
         return final_move
 
-def train():
+def train(training_sessions=None):
     plot_score = []
     plot_mean_score = []
     total_score = 0
@@ -117,7 +118,7 @@ def train():
     game = SnakeGameAI()
     displayer = Displayer(game)
 
-    while True:
+    while training_sessions is None or agent.n_games < training_sessions:
         state_old = agent.get_state(game)
 
         final_move = agent.get_action(state_old)
@@ -170,5 +171,7 @@ def train():
             plot(plot_score, plot_mean_score)
 
 if __name__ == '__main__':
-    train()
-    plt.show()
+    parser = argparse.ArgumentParser(description='Train the Snake AI agent.')
+    parser.add_argument('--sessions', type=int, default=None, help='Number of training sessions (default: None for infinite training)')
+    args = parser.parse_args()
+    train(training_sessions=args.sessions)

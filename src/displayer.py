@@ -20,7 +20,7 @@ class Displayer:
         height = len(self.game.board)
         grid = [[" " for _ in range(width)] for _ in range(height)]
 
-        head_x, head_y = self.game.head.x // BLOCK_SIZE, self.game.head.y // BLOCK_SIZE
+        head_x, head_y = self.game.head.x, self.game.head.y
 
         directions = {
             "UP": (0, -1),
@@ -36,7 +36,7 @@ class Displayer:
                     grid[y][x] = GREEN_APPLE
                 elif (x, y) in self.game.red_apples:
                     grid[y][x] = RED_APPLE
-                elif (x, y) in [(seg.x // BLOCK_SIZE, seg.y // BLOCK_SIZE) for seg in self.game.snake]:
+                elif (x, y) in [(seg.x, seg.y) for seg in self.game.snake]:
                     grid[y][x] = SNAKE_HEAD if (x, y) == (head_x, head_y) else SNAKE_BODY
                 elif self.game.board[y][x] == WALL:
                     grid[y][x] = WALL
@@ -66,9 +66,9 @@ class Displayer:
                     row.append(GREEN_APPLE)
                 elif coord in self.game.red_apples:
                     row.append(RED_APPLE)
-                elif coord == (self.game.head.x // BLOCK_SIZE, self.game.head.y // BLOCK_SIZE):
+                elif coord == (self.game.head.x, self.game.head.y):
                     row.append(SNAKE_HEAD)
-                elif coord in [(seg.x // BLOCK_SIZE, seg.y // BLOCK_SIZE) for seg in self.game.snake]:
+                elif coord in [(seg.x, seg.y) for seg in self.game.snake]:
                     row.append(SNAKE_BODY)
                 elif self.game.board[y][x] == WALL:
                     row.append(WALL)

@@ -58,10 +58,7 @@ class SnakeGameAI:
             for y in range(self.h // BLOCK_SIZE)
             ]
 
-        self.head = Point(5 * BLOCK_SIZE, 5 * BLOCK_SIZE)
-        self.snake = [self.head, 
-                      Point(self.head.x-BLOCK_SIZE, self.head.y),
-                      Point(self.head.x-(2*BLOCK_SIZE), self.head.y)]
+        self.init_snake()
         if (
             self.nb_red_apples +
             self.nb_green_apples +
@@ -97,6 +94,20 @@ class SnakeGameAI:
             return None, None
         x, y = random.choice(list(empty_cells))
         return x, y
+
+    def init_snake(self):
+        initialized_snake = False
+        while not initialized_snake:
+            x, y = self.get_random_empty_cell()
+            if x is not None and y is not None and x > 2:
+                self.head = Point(x, y)
+                self.snake = [self.head, 
+                              Point(self.head.x-1, self.head.y),
+                              Point(self.head.x-(2), self.head.y)]
+                initialized_snake = True
+                break
+        print("Snake have been initialized at: ", self.head)
+
 
     def place_new_apple (self, apple):
         x, y = self.get_random_empty_cell()
@@ -134,21 +145,18 @@ class SnakeGameAI:
         
         reward = 0
 
-        head_grid_x = self.head.x // BLOCK_SIZE
-        head_grid_y = self.head.y // BLOCK_SIZE
-
         if self.is_collision() or self.frame_iteration > 100*len(self.snake):
             self.game_over("Another brick in the wall.... ")
             reward = BIGGER_NEGATIVE_REWARD
             return reward, self.is_game_over, self.score, new_direction
             
-        if (head_grid_x, head_grid_y) in self.green_apples:
+        if (self.head.x, self.head.y) in self.green_apples:
             self.score += 1
             reward = POSITIVE_REWARD
-            self.green_apples.remove((head_grid_x, head_grid_y))
+            self.green_apples.remove((self.head.x, self.head.y))
             self.place_new_apple(GREEN_APPLE)
 
-        elif (head_grid_x, head_grid_y) in self.red_apples:
+        elif (self.head.x, self.head.y) in self.red_apples:
             reward = NEGATIVE_REWARD
             self.snake.pop()
             self.snake.pop()
@@ -156,7 +164,7 @@ class SnakeGameAI:
                 self.game_over("You ate a red apple and died")
                 reward = BIGGER_NEGATIVE_REWARD
                 return reward, self.is_game_over, self.score, new_direction
-            self.red_apples.remove((head_grid_x, head_grid_y))
+            self.red_apples.remove((self.head.x, self.head.y))
             self.place_new_apple(RED_APPLE)
         
         else:
@@ -170,7 +178,7 @@ class SnakeGameAI:
     def is_collision(self, pt=None):
         if pt is None:
             pt = self.head
-        if pt.x > self.w - BLOCK_SIZE or pt.x < 0 or pt.y > self.h - BLOCK_SIZE or pt.y < 0:
+        if pt.x > 10 or pt.x < 0 or pt.y > 10 or pt.y < 0:
             return True
         if pt in self.snake[1:]:
             return True
@@ -181,7 +189,7 @@ class SnakeGameAI:
         self.display.fill(BLACK)
         
         for pt in self.snake:
-            pygame.draw.rect(self.display, BLUE1, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
+            pygame.draw.rect(self.display, BLUE1, pygame.Rect(pt.x * BLOCK_SIZE, pt.y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
             
         for apple in self.green_apples:
             pygame.draw.rect(self.display, GREEN1, pygame.Rect(apple[0] * BLOCK_SIZE, apple[1]* BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
@@ -204,20 +212,20 @@ class SnakeGameAI:
             next_index = (index + 1) % 4
             new_dir = clock_wise[next_index]
         else:
-            next_index = (index - 1) % 4 #counter clock wise
+            next_index = (index - 1) % 4
             new_dir = clock_wise[next_index]
         self.direction = new_dir
 
         x = self.head.x
         y = self.head.y
         if self.direction == Direction.RIGHT:
-            x += BLOCK_SIZE
+            x += 1
         elif self.direction == Direction.LEFT:
-            x -= BLOCK_SIZE
+            x -= 1
         elif self.direction == Direction.DOWN:
-            y += BLOCK_SIZE
+            y += 1
         elif self.direction == Direction.UP:
-            y -= BLOCK_SIZE
+            y -= 1
             
         self.head = Point(x, y)
         return self.direction
