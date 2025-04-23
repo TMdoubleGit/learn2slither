@@ -18,10 +18,12 @@ class Direction(Enum):
 Point = namedtuple('Point', 'x, y')
 WHITE = (255, 255, 255)
 RED = (200,0,0)
+LIGHT_BLUE = (173, 216, 230)
 BLUE1 = (0, 0, 255)
 BLUE2 = (0, 100, 255)
 GREEN1 = (0, 150, 0)
 GREEN2 = (0, 255, 0)
+GRAY = (128, 128, 128)
 BLACK = (0,0,0)
 
 BLOCK_SIZE = 20
@@ -36,6 +38,8 @@ class SnakeGameAI:
     def __init__(self, w=BLOCK_SIZE * 12, h=BLOCK_SIZE * 12):
         self.w = w
         self.h = h
+
+        self.step_by_step = False
 
         self.board = [
             [WALL if (x == 0 or x == 11 or y == 0 or y == 11) else EMPTY
@@ -134,12 +138,25 @@ class SnakeGameAI:
 
         
     def play_step(self, action):
-        self.frame_iteration += 1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    self.step_by_step = not self.step_by_step
+                    print("Step-by-step mode:", self.step_by_step)
+                
+                if self.step_by_step and event.key == pygame.K_RETURN:
+                    self.step_triggered = True
+
+
+        if self.step_by_step:
+            if not getattr(self, 'step_triggered', False):
+                return 0, self.is_game_over, self.score, self.direction
+            self.step_triggered = False
+
+        self.frame_iteration += 1
         new_direction = self._move(action)
         self.snake.insert(0, self.head)
         
@@ -178,7 +195,7 @@ class SnakeGameAI:
     def is_collision(self, pt=None):
         if pt is None:
             pt = self.head
-        if pt.x > 10 or pt.x < 0 or pt.y > 10 or pt.y < 0:
+        if pt.x > 9 or pt.x < 1 or pt.y > 9 or pt.y < 1:
             return True
         if pt in self.snake[1:]:
             return True
@@ -187,9 +204,21 @@ class SnakeGameAI:
         
     def _update_ui(self):
         self.display.fill(BLACK)
-        
-        for pt in self.snake:
-            pygame.draw.rect(self.display, BLUE1, pygame.Rect(pt.x * BLOCK_SIZE, pt.y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
+
+        pygame.draw.rect(self.display, GRAY, pygame.Rect(0, 0, self.w, BLOCK_SIZE))
+        pygame.draw.rect(self.display, GRAY, pygame.Rect(0, self.h - BLOCK_SIZE, self.w, BLOCK_SIZE))
+        pygame.draw.rect(self.display, GRAY, pygame.Rect(0, 0, BLOCK_SIZE, self.h))
+        pygame.draw.rect(self.display, GRAY, pygame.Rect(self.w - BLOCK_SIZE, 0, BLOCK_SIZE, self.h))
+
+        for x in range(0, self.w, BLOCK_SIZE):
+            pygame.draw.line(self.display, WHITE, (x, 0), (x, self.h))
+
+        for y in range(0, self.h, BLOCK_SIZE):
+            pygame.draw.line(self.display, WHITE, (0, y), (self.w, y))
+
+        for i, pt in enumerate(self.snake):
+            color = LIGHT_BLUE if i == 0 else BLUE1
+            pygame.draw.rect(self.display, color, pygame.Rect(pt.x * BLOCK_SIZE, pt.y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
             
         for apple in self.green_apples:
             pygame.draw.rect(self.display, GREEN1, pygame.Rect(apple[0] * BLOCK_SIZE, apple[1]* BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
