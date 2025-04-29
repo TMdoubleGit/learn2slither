@@ -1,4 +1,5 @@
-from Game import SnakeGameAI, Direction, Point
+from src.game import SnakeGameAI, Direction, Point
+from src.constants import WALL
 import numpy as np
 
 class Interpreter:
@@ -37,6 +38,50 @@ class Interpreter:
 
         self.game.play_step()
     
+    def get_state(self):
+        """
+        Returns the current state of the environment as a NumPy array.
+
+        The state includes:
+        - Distances to green apples in all four directions.
+        - Distances to red apples in all four directions.
+        - Distances to dangers in all four directions.
+
+        Returns:
+            np.ndarray: A NumPy array representing the state of the environment.
+        """
+        directions = {
+            "up": (0, -1),
+            "down": (0, 1),
+            "left": (-1, 0),
+            "right": (1, 0)
+        }
+
+        state = np.array([
+            self._distance_apple(directions["up"], "green"),
+            self._distance_apple(directions["down"], "green"),
+            self._distance_apple(directions["left"], "green"),
+            self._distance_apple(directions["right"], "green"),
+
+            self._distance_apple(directions["up"], "red"),
+            self._distance_apple(directions["down"], "red"),
+            self._distance_apple(directions["left"], "red"),
+            self._distance_apple(directions["right"], "red"),
+
+            self._distance_danger(directions["up"]),
+            self._distance_danger(directions["down"]),
+            self._distance_danger(directions["left"]),
+            self._distance_danger(directions["right"]),
+
+            self._wall_distance(directions["up"]),
+            self._wall_distance(directions["down"]),
+            self._wall_distance(directions["left"]),
+            self._wall_distance(directions["right"]),
+        ], dtype=np.float32)
+
+        return state
+
+
     def _wall_distance(self, direction):
         """
         Calculates the normalized distance from the snake's head to the nearest wall
@@ -81,7 +126,7 @@ class Interpreter:
         grid_height = len(self.grid)
         grid_width = len(self.grid[0])
 
-        apples = self.game.green_apples if apple_type == "GREEN_APPLE" else self.game.red_apples
+        apples = self.game.green_apples if apple_type == "green" else self.game.red_apples
 
         while (0 <= x < grid_width and 0 <= y < grid_height):
             if (x, y) == apples:

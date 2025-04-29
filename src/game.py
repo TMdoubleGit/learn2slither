@@ -152,8 +152,13 @@ class SnakeGameAI:
 
 
         if self.step_by_step:
-            if not getattr(self, 'step_triggered', False):
-                return 0, self.is_game_over, self.score, self.direction
+            while not getattr(self, 'step_triggered', False):
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        quit()
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                        self.step_triggered = True
             self.step_triggered = False
 
         self.frame_iteration += 1
