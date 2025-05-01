@@ -37,6 +37,9 @@ class Interpreter:
             self.game.direction = Direction.DOWN
 
         self.game.play_step()
+        self.snake_head = self.game.head
+        self.grid = self.game.board
+        self.snake = self.game.snake
     
     def get_state(self):
         """
@@ -58,6 +61,11 @@ class Interpreter:
         }
 
         state = np.array([
+            self._distance_danger(directions["up"]),
+            self._distance_danger(directions["down"]),
+            self._distance_danger(directions["left"]),
+            self._distance_danger(directions["right"]),
+
             self._distance_apple(directions["up"], "green"),
             self._distance_apple(directions["down"], "green"),
             self._distance_apple(directions["left"], "green"),
@@ -68,18 +76,13 @@ class Interpreter:
             self._distance_apple(directions["left"], "red"),
             self._distance_apple(directions["right"], "red"),
 
-            self._distance_danger(directions["up"]),
-            self._distance_danger(directions["down"]),
-            self._distance_danger(directions["left"]),
-            self._distance_danger(directions["right"]),
-
             self._wall_distance(directions["up"]),
             self._wall_distance(directions["down"]),
             self._wall_distance(directions["left"]),
             self._wall_distance(directions["right"]),
         ], dtype=np.float32)
 
-        return state
+        return state.copy()
 
 
     def _wall_distance(self, direction):
@@ -100,7 +103,7 @@ class Interpreter:
         while (
             0 <= x < grid_width and
             0 <= y < grid_height and
-            self.grid[y][x] != Direction.WALL
+            self.grid[y][x] != WALL
         ):
             distance += 1
             x += direction[0]
@@ -129,7 +132,7 @@ class Interpreter:
         apples = self.game.green_apples if apple_type == "green" else self.game.red_apples
 
         while (0 <= x < grid_width and 0 <= y < grid_height):
-            if (x, y) == apples:
+            if (x, y) in apples:
                 return distance / (grid_height - 2)
             distance += 1
             x += direction[0]

@@ -49,7 +49,7 @@ class Displayer:
 
         return grid
 
-    def display(self, action, agent, state_t, state_t1, reward):
+    def display(self, action, agent, state, reward, is_new_state = False):
         """
         Displays the full board, the snake's vision, and the state information.
 
@@ -58,15 +58,17 @@ class Displayer:
             state (np.ndarray): The state of the environment as a NumPy array.
         """
         output = []
+        state_tempo = "(T + 1)" if is_new_state else "(T)"
 
-        output.append(BLUE + pyfiglet.figlet_format("Learn2Slither") + RESET)
-        output.append("Project: Reinforcement Learning Snake AI\n")
-        output.append(f"Game #{self.agent.n_games} - Turn #{self.game.frame_iteration} - Snake length: {len(self.game.snake)} - Score: {self.game.score}\n")
+        if is_new_state == False:
+            output.append(CLEAR + BLUE + pyfiglet.figlet_format("Learn2Slither") + RESET)
+            output.append("Project: Reinforcement Learning Snake AI\n")
+            output.append(f"Game #{self.agent.n_games} - Turn #{self.game.frame_iteration} - Snake length: {len(self.game.snake)} - Score: {self.game.score}\n")
 
         width = len(self.game.board[0])
         height = len(self.game.board)
 
-        full_board_t = []
+        full_board = []
         for y in range(height):
             row = []
             for x in range(width):
@@ -83,57 +85,33 @@ class Displayer:
                     row.append(WALL)
                 else:
                     row.append(EMPTY)
-            full_board_t.append(" ".join(row))
+            full_board.append(" ".join(row))
 
-        vision_t = self.get_vision_grid()
-
-        full_board_t1 = []
-        for y in range(height):
-            row = []
-            for x in range(width):
-                coord = (x, y)
-                if coord in self.game.green_apples:
-                    row.append(GREEN_APPLE)
-                elif coord in self.game.red_apples:
-                    row.append(RED_APPLE)
-                elif coord == (self.game.head.x, self.game.head.y):
-                    row.append(SNAKE_HEAD)
-                elif coord in [(seg.x, seg.y) for seg in self.game.snake]:
-                    row.append(SNAKE_BODY)
-                elif self.game.board[y][x] == WALL:
-                    row.append(WALL)
-                else:
-                    row.append(EMPTY)
-            full_board_t1.append(" ".join(row))
-
-        vision_t1 = self.get_vision_grid()
-
-        output.append("FULL BOARD t".center(23) + "||" + "VISION t".center(23) + "||" + "STATE (t)".center(23))
-        output.append("-" * 75)
+        vision = self.get_vision_grid()
 
         state_labels = [
             "danger_up", "danger_down", "danger_left", "danger_right",
             "green_apple_up", "green_apple_down", "green_apple_left", "green_apple_right",
-            "red_apple_up", "red_apple_down", "red_apple_left", "red_apple_right"
+            "red_apple_up", "red_apple_down", "red_apple_left", "red_apple_right","wall_up",
+            "wall_down", "wall_left", "wall_right"
         ]
-        for i in range(height):
-            fb_row = full_board_t[i]
-            vis_row = " ".join(vision_t[i])
-            state_info = f"{state_labels[i % len(state_labels)]}: {state_t[i]:.2f}"
-            output.append(fb_row.ljust(23) + "||" + vis_row.ljust(23) + "||" + state_info.ljust(23))
 
-        output.append(f"\nAction Taken: {action.name} (epsilon = {self.agent.epsilon:.2f}) - Reward: {reward}")
-        output.append("\n" + "=" * 80)
+        if is_new_state == True:
+            output.append(f"\nAction Taken: {action.name} (epsilon = {self.agent.epsilon:.2f}) - Reward: {reward}")
+            output.append("\n" + "=" * 80)
 
-        output.append("FULL BOARD (t+1)".center(23) + "||" + "VISION (t+1)".center(23) + "||" + "STATE (t+1)".center(23))
+        output.append(f"FULL BOARD {state_tempo}".center(23) + "||" + f"VISION {state_tempo}".center(23) + "||" + f"STATE {state_tempo}".center(23))
         output.append("-" * 75)
 
         for i in range(height):
-            fb_row = full_board_t1[i]
-            vis_row = " ".join(vision_t1[i])
-            state_info = f"{state_labels[i % len(state_labels)]}: {state_t1[i]:.2f}"
-            output.append(fb_row.ljust(23) + "||" + vis_row.ljust(23) + "||" + state_info.ljust(23))
+            fb_row = full_board[i]
+            vis_row = " ".join(vision[i])
+            state_info = f"{state_labels[i]}: {state[i]:.2f}" if i < len(state) else ""
+            extra_state_info = f"{state_labels[12 + i]}: {state[12 + i]:.2f}" if i < 4 else ""
+            output.append(fb_row.ljust(23) + "||" + vis_row.ljust(23) + "||" + state_info.ljust(23) + extra_state_info.ljust(23))
+
 
         print("\n".join(output))
-        time.sleep(1 / self.fps)
+        if is_new_state == True:
+            time.sleep(1 / self.fps)
 

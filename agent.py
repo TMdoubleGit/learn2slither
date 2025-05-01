@@ -23,7 +23,7 @@ class Agent:
         self.epsilon = 0 # controls the randomness
         self.gamma = 0.95 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft() if we exceed memory
-        self.model = Linear_QNet(12, 256, 3)
+        self.model = Linear_QNet(16, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
         self.interpreter = None
 
@@ -83,6 +83,8 @@ def train(training_sessions=None):
     while training_sessions is None or agent.n_games < training_sessions:
         state_old = agent.get_state(game)
 
+        displayer.display(None, agent, state_old, None, False)
+
         final_move = agent.get_action(state_old)
 
         action_dir = Direction.RIGHT
@@ -99,7 +101,7 @@ def train(training_sessions=None):
         reward, done, score, new_direction = game.play_step(final_move)
         state_new = agent.get_state(game)
 
-        displayer.display(action_dir, agent, state_old, state_new, reward)
+        displayer.display(action_dir, agent, state_new, reward, True)
 
         agent.train_short_memory(state_old, final_move, reward, state_new, done)
 

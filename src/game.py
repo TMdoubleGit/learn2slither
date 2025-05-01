@@ -3,10 +3,10 @@ import random
 from enum import Enum
 from collections import namedtuple
 import numpy as np
-from src.constants import RED_APPLE, GREEN_APPLE, WALL, EMPTY, NEGATIVE_REWARD, POSITIVE_REWARD, SMALLER_NEGATIVE_REWARD, BIGGER_NEGATIVE_REWARD
+from src.constants import RED_APPLE, SNAKE_BODY, GREEN_APPLE, WALL, EMPTY, NEGATIVE_REWARD, POSITIVE_REWARD, SMALLER_NEGATIVE_REWARD, BIGGER_NEGATIVE_REWARD
 
 pygame.init()
-font = pygame.font.Font('arial.ttf', 25)
+font = pygame.font.Font('arial.ttf', 20)
 
 
 class Direction(Enum):
@@ -193,10 +193,32 @@ class SnakeGameAI:
             reward = SMALLER_NEGATIVE_REWARD
             self.snake.pop()
         
+        self._update_board()
+        
         self._update_ui()
         self.clock.tick(SPEED)
         return reward, self.is_game_over, self.score, new_direction
-    
+
+    def _update_board(self):
+        """
+        Updates the grid given the state we are in.
+        """
+        self.board = [
+            [WALL if (x == 0 or x == len(self.board[0]) - 1 or y == 0 or y == len(self.board) - 1) else EMPTY
+            for x in range(len(self.board[0]))]
+            for y in range(len(self.board))
+        ]
+
+        for segment in self.snake:
+            self.board[segment.y][segment.x] = SNAKE_BODY
+
+        for apple in self.green_apples:
+            self.board[apple[1]][apple[0]] = GREEN_APPLE
+
+        for apple in self.red_apples:
+            self.board[apple[1]][apple[0]] = RED_APPLE
+
+
     def is_collision(self, pt=None):
         if pt is None:
             pt = self.head
