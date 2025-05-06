@@ -159,6 +159,9 @@ class SnakeGameAI:
                         quit()
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                         self.step_triggered = True
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                        self.step_by_step = not self.step_by_step
+                        print("Step-by-step mode:", self.step_by_step)
             self.step_triggered = False
 
         self.frame_iteration += 1

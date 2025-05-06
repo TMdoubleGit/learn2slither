@@ -100,15 +100,15 @@ class Displayer:
             output.append(f"\nAction Taken: {action.name} (epsilon = {self.agent.epsilon:.2f}) - Reward: {reward}")
             output.append("\n" + "=" * 80)
 
-        output.append(f"FULL BOARD {state_tempo}".center(23) + "||" + f"VISION {state_tempo}".center(23) + "||" + f"STATE {state_tempo}".center(23))
-        output.append("-" * 75)
+        output.append(f"FULL BOARD {state_tempo}".center(23) + "  ||  " + f"VISION {state_tempo}".center(23) + "  ||  " + f"STATE {state_tempo}".center(23))
+        output.append("-" * 95)
 
         for i in range(height):
             fb_row = full_board[i]
             vis_row = " ".join(vision[i])
             state_info = f"{state_labels[i]}: {state[i]:.2f}" if i < len(state) else ""
             extra_state_info = f"{state_labels[12 + i]}: {state[12 + i]:.2f}" if i < 4 else ""
-            output.append(fb_row.ljust(23) + "||" + vis_row.ljust(23) + "||" + state_info.ljust(23) + extra_state_info.ljust(23))
+            output.append(fb_row.ljust(23) + "     " + vis_row.ljust(23) + "     " + state_info.ljust(23) + extra_state_info.ljust(23))
 
 
         print("\n".join(output))
