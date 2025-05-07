@@ -1,4 +1,3 @@
-from src.game import SnakeGameAI, Direction, Point
 from src.constants import WALL
 import numpy as np
 
@@ -8,7 +7,7 @@ class Interpreter:
     the state of the environment as a NumPy array.
     """
 
-    def __init__(self, game: SnakeGameAI):
+    def __init__(self, game):
         """
         Initializes the Interpreter with the game instance.
 
@@ -155,7 +154,7 @@ class Interpreter:
         grid_height = len(self.grid)
         grid_width = len(self.grid[0])
 
-        while 0 <= x < grid_width and 0 <= y < grid_height:
+        while (0 <= x < grid_width and 0 <= y < grid_height):
             if self.grid[y][x] == WALL:
                 return distance / (grid_height - 2)
 

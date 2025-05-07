@@ -113,5 +113,5 @@ class Displayer:
 
         print("\n".join(output))
         if is_new_state == True:
-            time.sleep(1 / self.fps)
+            time.sleep(1/self.fps)
 

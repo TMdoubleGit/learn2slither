@@ -4,6 +4,7 @@ from enum import Enum
 from collections import namedtuple
 import numpy as np
 from src.constants import RED_APPLE, SNAKE_BODY, GREEN_APPLE, WALL, EMPTY, NEGATIVE_REWARD, POSITIVE_REWARD, SMALLER_NEGATIVE_REWARD, BIGGER_NEGATIVE_REWARD
+from src.interpreter import Interpreter
 
 pygame.init()
 font = pygame.font.Font('arial.ttf', 20)
@@ -51,6 +52,9 @@ class SnakeGameAI:
         pygame.display.set_caption('Snake')
         self.clock = pygame.time.Clock()
         self.reset()
+
+        self.interpreter = Interpreter(self)
+
         
 
     def reset(self):
@@ -87,6 +91,7 @@ class SnakeGameAI:
         self.game_over_message = ""
         self.frame_iteration = 0
 
+
     def get_random_empty_cell(self):
         empty_cells = {
             (x, y)
@@ -110,7 +115,6 @@ class SnakeGameAI:
                               Point(self.head.x-(2), self.head.y)]
                 initialized_snake = True
                 break
-        print("Snake have been initialized at: ", self.head)
 
 
     def place_new_apple (self, apple):
@@ -138,6 +142,7 @@ class SnakeGameAI:
 
         
     def play_step(self, action):
+        new_direction = self.direction
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -162,6 +167,7 @@ class SnakeGameAI:
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
                         self.step_by_step = not self.step_by_step
                         print("Step-by-step mode:", self.step_by_step)
+                        return 0, self.is_game_over, self.score, new_direction
             self.step_triggered = False
 
         self.frame_iteration += 1
@@ -197,7 +203,7 @@ class SnakeGameAI:
             self.snake.pop()
         
         self._update_board()
-        
+        self.interpreter.get_state()
         self._update_ui()
         self.clock.tick(SPEED)
         return reward, self.is_game_over, self.score, new_direction

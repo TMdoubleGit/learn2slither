@@ -7,7 +7,6 @@ from src.game import SnakeGameAI, Direction, Point
 from src.model import Linear_QNet, QTrainer
 from src.helper import plot
 from src.constants import BLOCK_SIZE
-from src.interpreter import Interpreter
 import os
 import argparse
 
@@ -36,11 +35,8 @@ class Agent:
 
         Returns:
             np.ndarray: The state of the environment as a NumPy array.
-        """
-        if self.interpreter is None:
-            self.interpreter = Interpreter(game)
-        
-        return self.interpreter.get_state()
+        """       
+        return game.interpreter.get_state()
 
 
     def remember(self, state, action, reward, next_state, done):
@@ -127,7 +123,7 @@ def train(training_sessions=None):
                 plot(plot_score, plot_mean_score, save_path=plot_path)
 
 
-            print('Game', agent.n_games, 'Score', score, 'Record:', record)
+            # print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
             plot_score.append(score)
             total_score += score
