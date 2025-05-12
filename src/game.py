@@ -3,7 +3,7 @@ import random
 from enum import Enum
 from collections import namedtuple
 import numpy as np
-from src.constants import RED_APPLE, SNAKE_BODY, GREEN_APPLE, WALL, EMPTY, NEGATIVE_REWARD, POSITIVE_REWARD, SMALLER_NEGATIVE_REWARD, BIGGER_NEGATIVE_REWARD
+from src.constants import RED_APPLE, SNAKE_BODY, GREEN_APPLE, WALL, EMPTY, NEGATIVE_REWARD, POSITIVE_REWARD, SMALLER_NEGATIVE_REWARD, BIGGER_NEGATIVE_REWARD, TRAINING_MODE
 from src.interpreter import Interpreter
 
 pygame.init()
@@ -11,10 +11,10 @@ font = pygame.font.Font('arial.ttf', 20)
 
 
 class Direction(Enum):
-    RIGHT = 1
-    LEFT = 2
-    UP = 3
-    DOWN = 4
+    UP = 1
+    RIGHT = 2
+    DOWN = 3
+    LEFT = 4
     
 Point = namedtuple('Point', 'x, y')
 WHITE = (255, 255, 255)
@@ -48,9 +48,13 @@ class SnakeGameAI:
             for y in range(self.h // BLOCK_SIZE)
             ]
 
-        self.display = pygame.display.set_mode((self.w, self.h))
-        pygame.display.set_caption('Snake')
-        self.clock = pygame.time.Clock()
+        if not TRAINING_MODE:
+            self.display = pygame.display.set_mode((self.w, self.h))
+            pygame.display.set_caption('Snake')
+            self.clock = pygame.time.Clock()
+        else:
+            self.display = None
+            self.clock = None
         self.reset()
 
         self.interpreter = Interpreter(self)
@@ -205,7 +209,8 @@ class SnakeGameAI:
         self._update_board()
         self.interpreter.get_state()
         self._update_ui()
-        self.clock.tick(SPEED)
+        if not TRAINING_MODE and self.clock:
+            self.clock.tick(SPEED)
         return reward, self.is_game_over, self.score, new_direction
 
     def _update_board(self):
@@ -239,6 +244,8 @@ class SnakeGameAI:
         return False
         
     def _update_ui(self):
+        if TRAINING_MODE:
+            return
         self.display.fill(BLACK)
 
         pygame.draw.rect(self.display, GRAY, pygame.Rect(0, 0, self.w, BLOCK_SIZE))
@@ -268,7 +275,7 @@ class SnakeGameAI:
         pygame.display.flip()
         
     def _move(self, action):
-        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+        clock_wise = [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
         index = clock_wise.index(self.direction)
 
         if np.array_equal(action, [1, 0, 0]):

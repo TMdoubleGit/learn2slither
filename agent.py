@@ -19,6 +19,7 @@ class Agent:
 
     def __init__(self):
         self.n_games = 0
+        self.record = 0
         self.epsilon = 0 # controls the randomness
         self.gamma = 0.95 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft() if we exceed memory
@@ -79,7 +80,7 @@ def train(training_sessions=None):
     while training_sessions is None or agent.n_games < training_sessions:
         state_old = agent.get_state(game)
 
-        displayer.display(None, agent, state_old, None, False)
+        env_old = displayer.display(None, state_old, None, None, False)
 
         final_move = agent.get_action(state_old)
 
@@ -97,7 +98,7 @@ def train(training_sessions=None):
         reward, done, score, new_direction = game.play_step(final_move)
         state_new = agent.get_state(game)
 
-        displayer.display(action_dir, agent, state_new, reward, True)
+        displayer.display(action_dir, state_new, reward, env_old, True)
 
         agent.train_short_memory(state_old, final_move, reward, state_new, done)
 
@@ -109,7 +110,7 @@ def train(training_sessions=None):
             agent.train_long_memory()
 
             if score > record:
-                record = score
+                agent.record = score
             
             if agent.n_games % 1000 == 0:
                 model_folder_path = './models'

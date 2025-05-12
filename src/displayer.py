@@ -1,7 +1,7 @@
 import pyfiglet
 import time
 
-from src.constants import WALL, BLOCK_SIZE, EMPTY
+from src.constants import WALL, BLOCK_SIZE, EMPTY, TRAINING_MODE
 from src.constants import GREEN_APPLE, RED_APPLE, SNAKE_HEAD, SNAKE_BODY, RESET, CLEAR, BLUE
 
 class Displayer:
@@ -9,9 +9,11 @@ class Displayer:
         self.game = game
         self.agent = agent
         self.fps = fps
-        print(CLEAR + BLUE + pyfiglet.figlet_format("Learn2Slither") + RESET)
-        print("Reinforcement Learning Snake Agent")
-        print("The snake makes decisions based only on its 4-directional vision.\n")
+        
+        if TRAINING_MODE:
+            print(CLEAR + BLUE + pyfiglet.figlet_format("Learn2Slither") + RESET)
+            print("Reinforcement Learning Snake Agent")
+            print("The snake makes decisions based only on its 4-directional vision.\n")
 
     def get_vision_grid(self):
         """
@@ -49,7 +51,8 @@ class Displayer:
 
         return grid
 
-    def display(self, action, agent, state, reward, is_new_state = False):
+
+    def display(self, action, state, reward, prev_state = [], is_new_state = False):
         """
         Displays the full board, the snake's vision, and the state information.
 
@@ -57,13 +60,16 @@ class Displayer:
             action (str): The action taken by the snake.
             state (np.ndarray): The state of the environment as a NumPy array.
         """
+        if TRAINING_MODE:
+            return
         output = []
         state_tempo = "(T + 1)" if is_new_state else "(T)"
 
-        if is_new_state == False:
+        if is_new_state == True:
             output.append(CLEAR + BLUE + pyfiglet.figlet_format("Learn2Slither") + RESET)
             output.append("Project: Reinforcement Learning Snake AI\n")
             output.append(f"Game #{self.agent.n_games} - Turn #{self.game.frame_iteration} - Snake length: {len(self.game.snake)} - Score: {self.game.score}\n")
+            output.append(prev_state)
 
         width = len(self.game.board[0])
         height = len(self.game.board)
@@ -97,7 +103,7 @@ class Displayer:
         ]
 
         if is_new_state == True:
-            output.append(f"\nAction Taken: {action.name} (epsilon = {self.agent.epsilon:.2f}) - Reward: {reward}")
+            output.append(f"\nAction Taken: {action.name} (epsilon = {self.agent.epsilon:.2f}) - Reward: {reward} - Record: {self.agent.record}")
             output.append("\n" + "=" * 80)
 
         output.append(f"FULL BOARD {state_tempo}".center(23) + "  ||  " + f"VISION {state_tempo}".center(23) + "  ||  " + f"STATE {state_tempo}".center(23))
@@ -111,7 +117,15 @@ class Displayer:
             output.append(fb_row.ljust(23) + "     " + vis_row.ljust(23) + "     " + state_info.ljust(23) + extra_state_info.ljust(23))
 
 
-        print("\n".join(output))
         if is_new_state == True:
+            print("\n".join(output))
             time.sleep(1/self.fps)
+        
+        return "\n".join(output)
 
+    # def display_final(self, action, agent, state_old, state_new, reward):
+    #     """
+    #     Displays both states.
+    #     """
+    #     self.display(None, agent, state_old, reward, False)
+    #     self.display(action, agent, state_new, reward, True)

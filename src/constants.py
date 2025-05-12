@@ -25,6 +25,4 @@ POSITIVE_REWARD = 150
 SMALLER_NEGATIVE_REWARD = -1
 BIGGER_NEGATIVE_REWARD = -100
 
-# Constants for the training and gaming loops
-TRAINING_LOOP = True
-GAMING_LOOP = True
+TRAINING_MODE = True

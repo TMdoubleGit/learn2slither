@@ -17,28 +17,35 @@ class Interpreter:
         self.game = game
         self.snake = game.snake
         self.grid = game.board
-        self.snake_head = self.game.head
 
-    def interpret(self, action):
-        """
-        Executes the given action and updates the game state.
+    # def relative_to_absolute(self, relative_direction):
+    #     """
+    #     Converts a relative direction (forward, right, left, backward) into an absolute direction
+    #     based on the current direction of the snake.
 
-        Args:
-            action (int): The action to perform (0: LEFT, 1: RIGHT, 2: UP, 3: DOWN).
-        """
-        if action == 0:
-            self.game.direction = Direction.LEFT
-        elif action == 1:
-            self.game.direction = Direction.RIGHT
-        elif action == 2:
-            self.game.direction = Direction.UP
-        elif action == 3:
-            self.game.direction = Direction.DOWN
+    #     Args:
+    #         relative_direction (str): One of ["forward", "right", "left", "backward"].
 
-        self.game.play_step()
-        self.snake_head = self.game.head
-        self.grid = self.game.board
-        self.snake = self.game.snake
+    #     Returns:
+    #         tuple: The absolute direction as a vector (dx, dy).
+    #     """
+    #     absolute_directions = {
+    #         "up": (0, -1),
+    #         "down": (0, 1),
+    #         "left": (-1, 0),
+    #         "right": (1, 0)
+    #     }
+    #     clockwise = ["up", "right", "down", "left"]
+    #     current_index = clockwise.index(self.game.direction.name.lower())
+
+    #     if relative_direction == "forward":
+    #         return absolute_directions[clockwise[current_index]]
+    #     elif relative_direction == "right":
+    #         return absolute_directions[clockwise[(current_index + 1) % 4]]
+    #     elif relative_direction == "left":
+    #         return absolute_directions[clockwise[(current_index - 1) % 4]]
+    #     elif relative_direction == "backward":
+    #         return absolute_directions[clockwise[(current_index + 2) % 4]]
     
     def get_state(self):
         """
@@ -95,13 +102,13 @@ class Interpreter:
         Returns:
             float: The normalized distance to the nearest wall (between 0 and 1).
         """
-        x, y = self.snake_head.x, self.snake_head.y
+        x, y = self.game.head.x, self.game.head.y
         distance = 0
         grid_height = len(self.grid)
         grid_width = len(self.grid[0])
         while (
-            0 <= x < grid_width and
-            0 <= y < grid_height and
+            0 < x < grid_width - 1 and
+            0 < y < grid_height - 1 and
             self.grid[y][x] != WALL
         ):
             distance += 1
@@ -123,14 +130,14 @@ class Interpreter:
             float: The normalized distance to the nearest apple (between 0 and 1),
                 or 0 if no apple is found in the given direction.
         """
-        x, y = self.snake_head.x, self.snake_head.y
+        x, y = self.game.head.x, self.game.head.y
         distance = 0
         grid_height = len(self.grid)
         grid_width = len(self.grid[0])
 
         apples = self.game.green_apples if apple_type == "green" else self.game.red_apples
 
-        while (0 <= x < grid_width and 0 <= y < grid_height):
+        while (0 < x < grid_width - 1 and 0 < y < grid_height - 1):
             if (x, y) in apples:
                 return distance / (grid_height - 2)
             distance += 1
@@ -149,24 +156,20 @@ class Interpreter:
         Returns:
             float: The normalized distance to the nearest danger (between 0 and 1).
         """
-        x, y = self.snake_head.x, self.snake_head.y
+        x, y = self.game.head.x, self.game.head.y
         distance = 0
         grid_height = len(self.grid)
         grid_width = len(self.grid[0])
 
-        while (0 <= x < grid_width and 0 <= y < grid_height):
-            if self.grid[y][x] == WALL:
-                return distance / (grid_height - 2)
-
-            if (x, y) in [(segment.x, segment.y) for segment in self.snake[1:]]:
-                return distance / (grid_height - 2)
-
-            if (x, y) in self.game.red_apples and len(self.snake) <= 1:
-                return distance / (grid_height - 2)
-
+        while (
+            0 < x < grid_width - 1 and 0 < y < grid_height - 1 and
+            self.grid[y][x] != WALL and
+            (x, y) not in [(segment.x, segment.y) for segment in self.game.snake[1:]] and 
+            ((x, y) not in self.game.red_apples and len(self.game.snake) > 1)
+        ):
             x += direction[0]
             y += direction[1]
             distance += 1
 
-        return 0
+        return distance / (grid_height - 2)
 
