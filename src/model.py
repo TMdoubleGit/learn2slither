@@ -8,16 +8,29 @@ import os
 class Linear_QNet(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
-        self.linear1 = nn.Linear(input_size, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, output_size)
+        self.input_layer = nn.Linear(input_size, hidden_size)
+        self.hidden_layer = nn.Linear(hidden_size, hidden_size)
+        self.output_layer = nn.Linear(hidden_size, output_size)
     
     def forward(self, x):
-        x = F.relu(self.linear1(x))
-        x = self.linear2(x)
+        x = F.relu(self.input_layer(x))
+        x = F.relu(self.hidden_layer(x))
+        x = self.output_layer(x)
         return x
     
-    def save(self, file_name):
-        torch.save(self.state_dict(), file_name)
+    def save(self, file_name, metadata=None):
+        checkpoint = {
+            'model_state_dict': self.state_dict(),
+        }
+        if metadata:
+            checkpoint.update(metadata)
+        torch.save(checkpoint, file_name)
+
+    def load(self, file_name):
+        checkpoint = torch.load(file_name, weights_only=False)
+        self.load_state_dict(checkpoint['model_state_dict'])
+        metadata = {key: value for key, value in checkpoint.items() if key != 'model_state_dict'}
+        return metadata
 
 class QTrainer:
     def __init__(self, model, lr, gamma):
@@ -28,21 +41,18 @@ class QTrainer:
         self.criterion = nn.MSELoss()
     
     def train_step(self, state, action, reward, next_state, done):
-        state = torch.tensor(state, dtype=torch.float)
-        next_state = torch.tensor(next_state, dtype=torch.float)
+        state = torch.tensor(np.array(state), dtype=torch.float)
+        next_state = torch.tensor(np.array(next_state), dtype=torch.float)
         action = torch.tensor(np.array(action), dtype=torch.long)
-        reward = torch.tensor(reward, dtype=torch.float)
-        # (n, x)
+        reward = torch.tensor(np.array(reward), dtype=torch.float)
 
         if len(state.shape) == 1:
-            # (1, x)
             state = torch.unsqueeze(state, 0)
             next_state = torch.unsqueeze(next_state, 0)
             action = torch.unsqueeze(action, 0)
             reward = torch.unsqueeze(reward, 0)
             done = (done, )
         
-        # 1: predicted Q values with current state
         pred = self.model(state)
         target = pred.clone()
 
@@ -50,18 +60,15 @@ class QTrainer:
             Q_new = reward[idx]
             if not done[idx]:
                 Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
-            # target[idx][torch.argmax(action).item()] = Q_new
             action_index = torch.argmax(action).item()
-            if action_index >= target.shape[1]:  # Prevent out-of-bounds error
+
+            if action_index >= target.shape[1]:
                 print(f"⚠️ Warning: action_index {action_index} is out of bounds! Resetting to 0.")
-                action_index = 0  # Default to first action as a failsafe
+                action_index = 0 
 
             target[idx][action_index] = Q_new
   
-        # 2: Q_new = r + y * max(next_predicted Q value) -> Q-learning formula
-        # pred.clone() -> Q values
-        # preds[argmax(action)] = Q_new
         self.optimizer.zero_grad()
-        loss = self.criterion(target, pred)
+        loss = self.criterion.forward(target, pred)
         loss.backward()
         self.optimizer.step()

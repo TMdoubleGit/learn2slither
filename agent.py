@@ -11,19 +11,22 @@ import os
 import argparse
 
 
-MAX_MEMORY = 100_000
-BATCH_SIZE = 256
-LR = 0.001
+MAX_MEMORY = 500_000
+BATCH_SIZE = 1_024
+LR = 0.0001
 
 class Agent:
 
     def __init__(self):
         self.n_games = 0
         self.record = 0
-        self.epsilon = 0 # controls the randomness
-        self.gamma = 0.95 # discount rate
-        self.memory = deque(maxlen=MAX_MEMORY) # popleft() if we exceed memory
-        self.model = Linear_QNet(16, 256, 3)
+        self.epsilon = 1.0
+        self.max_epsilon = 1.0
+        self.min_epsilon = 0.01
+        self.decay_rate = 0.001
+        self.gamma = 0.99
+        self.memory = deque(maxlen=MAX_MEMORY)
+        self.model = Linear_QNet(16, 256, 4)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
         self.interpreter = None
 
@@ -57,23 +60,38 @@ class Agent:
         self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
-        self.epsilon = max(10, 80 - self.n_games)
-        final_move = [0, 0, 0]
-        if random.randint(0, 200) < self.epsilon:
-            move=random.randint(0,2)
+        self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * self.n_games)
+        final_move = [0, 0, 0, 0]
+        state0 = torch.tensor(state, dtype=torch.float)
+        prediction = self.model(state0)
+        if random.uniform(0, 1) < self.epsilon:
+            top_actions = torch.argsort(prediction, descending=True)[:3]
+            move = random.choice(top_actions).item()
         else:
-            state0 = torch.tensor(state, dtype=torch.float)
-            prediction = self.model(state0)
             move = torch.argmax(prediction).item()
         final_move[move] = 1
         return final_move
 
-def train(training_sessions=None):
+def train(training_sessions=None, model_path=None):
     plot_score = []
     plot_mean_score = []
     total_score = 0
-    record = 0
     agent = Agent()
+    print("Coucou")
+
+    if model_path:
+        print("ca va")
+        if os.path.exists(model_path):
+            metadata = agent.model.load(model_path)
+            agent.n_games = metadata.get('n_games', 0)
+            agent.record = metadata.get('record', 0)
+            agent.epsilon = metadata.get('epsilon', 1.0)
+            agent.max_epsilon = metadata.get('max_epsilon', 1.0)
+            agent.min_epsilon = metadata.get('min_epsilon', 0.01)
+            agent.decay_rate = metadata.get('decay_rate', 0.001)
+            agent.gamma = metadata.get('gamma', 0.99)
+            agent.model.eval()
+
     game = SnakeGameAI()
     displayer = Displayer(game, agent)
 
@@ -109,7 +127,7 @@ def train(training_sessions=None):
             agent.n_games += 1
             agent.train_long_memory()
 
-            if score > record:
+            if score > agent.record:
                 agent.record = score
             
             if agent.n_games % 1000 == 0:
@@ -119,12 +137,19 @@ def train(training_sessions=None):
                 new_dir_path = "./models/game_" + str(agent.n_games)
                 if not os.path.exists(new_dir_path):
                     os.makedirs(new_dir_path)
-                agent.model.save(f"./models/game_{agent.n_games}/model_{agent.n_games}.pth")
+                metadata = {
+                    'n_games': agent.n_games,
+                    'record': agent.record,
+                    'epsilon': agent.epsilon,
+                    'max_epsilon': agent.max_epsilon,
+                    'min_epsilon': agent.min_epsilon,
+                    'decay_rate': agent.decay_rate,
+                    'gamma': agent.gamma
+                }
+                agent.model.save(f"./models/game_{agent.n_games}/model_{agent.n_games}.pth", metadata=metadata)
                 plot_path = f"{new_dir_path}/plot_{agent.n_games}.png"
                 plot(plot_score, plot_mean_score, save_path=plot_path)
 
-
-            # print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
             plot_score.append(score)
             total_score += score
@@ -135,5 +160,6 @@ def train(training_sessions=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train the Snake AI agent.')
     parser.add_argument('--sessions', type=int, default=None, help='Number of training sessions (default: None for infinite training)')
+    parser.add_argument('--model_path', type=str, default=None, help='Path to a previously saved model (default: None)')
     args = parser.parse_args()
-    train(training_sessions=args.sessions)
+    train(training_sessions=args.sessions, model_path=args.model_path)
