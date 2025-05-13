@@ -77,10 +77,8 @@ def train(training_sessions=None, model_path=None):
     plot_mean_score = []
     total_score = 0
     agent = Agent()
-    print("Coucou")
 
     if model_path:
-        print("ca va")
         if os.path.exists(model_path):
             metadata = agent.model.load(model_path)
             agent.n_games = metadata.get('n_games', 0)
@@ -103,14 +101,17 @@ def train(training_sessions=None, model_path=None):
         final_move = agent.get_action(state_old)
 
         action_dir = Direction.RIGHT
-        if np.array_equal(final_move, [1, 0, 0]):
+        if np.array_equal(final_move, [1, 0, 0, 0]):
             action_dir = game.direction
-        elif np.array_equal(final_move, [0, 1, 0]):
+        elif np.array_equal(final_move, [0, 1, 0, 0]):
             clockwise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
             action_dir = clockwise[(clockwise.index(game.direction) + 1) % 4]
-        elif np.array_equal(final_move, [0, 0, 1]):
+        elif np.array_equal(final_move, [0, 0, 1, 0]):
             clockwise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
             action_dir = clockwise[(clockwise.index(game.direction) - 1) % 4]
+        elif np.array_equal(final_move, [0, 0, 0, 1]):
+            clockwise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+            action_dir = clockwise[(clockwise.index(game.direction) + 2) % 4]
 
 
         reward, done, score, new_direction = game.play_step(final_move)
