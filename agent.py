@@ -12,7 +12,7 @@ import argparse
 
 
 MAX_MEMORY = 500_000
-BATCH_SIZE = 1_024
+BATCH_SIZE = 256
 LR = 0.0001
 
 class Agent:
@@ -23,7 +23,7 @@ class Agent:
         self.epsilon = 1.0
         self.max_epsilon = 1.0
         self.min_epsilon = 0.01
-        self.decay_rate = 0.001
+        self.decay_rate = 0.005
         self.gamma = 0.99
         self.memory = deque(maxlen=MAX_MEMORY)
         self.model = Linear_QNet(16, 256, 4)
@@ -61,12 +61,14 @@ class Agent:
 
     def get_action(self, state):
         self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * self.n_games)
+        print(f"Game: {self.n_games}, Epsilon: {self.epsilon:.4f}")
         final_move = [0, 0, 0, 0]
         state0 = torch.tensor(state, dtype=torch.float)
         prediction = self.model(state0)
         if random.uniform(0, 1) < self.epsilon:
-            top_actions = torch.argsort(prediction, descending=True)[:3]
-            move = random.choice(top_actions).item()
+            # top_actions = torch.argsort(prediction, descending=True)[:3]
+            # move = random.choice(top_actions).item()
+            move = random.randint(0, len(final_move) - 1)
         else:
             move = torch.argmax(prediction).item()
         final_move[move] = 1
@@ -100,7 +102,7 @@ def train(training_sessions=None, model_path=None):
 
         final_move = agent.get_action(state_old)
 
-        action_dir = Direction.RIGHT
+        # action_dir = Direction.RIGHT
         if np.array_equal(final_move, [1, 0, 0, 0]):
             action_dir = game.direction
         elif np.array_equal(final_move, [0, 1, 0, 0]):
