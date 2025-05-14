@@ -154,6 +154,7 @@ def train(training_sessions=None, model_path=None):
             mean_score = total_score / agent.n_games
             plot_mean_score.append(mean_score)
             plot(plot_score, plot_mean_score)
+            print("human_mode:", game.human_mode)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train the Snake AI agent.')
@@ -161,3 +162,4 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, default=None, help='Path to a previously saved model (default: None)')
     args = parser.parse_args()
     train(training_sessions=args.sessions, model_path=args.model_path)
+    

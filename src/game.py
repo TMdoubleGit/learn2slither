@@ -109,6 +109,7 @@ class SnakeGameAI:
         x, y = random.choice(list(empty_cells))
         return x, y
 
+
     def init_snake(self):
         initialized_snake = False
         while not initialized_snake:
@@ -141,6 +142,7 @@ class SnakeGameAI:
                 if self.current_green_apples == 0:
                     self.game_over("No more green apples, you win!")
 
+
     def game_over(self, game_over_message):
         self.is_game_over = True
         self.game_over_message = game_over_message
@@ -157,6 +159,10 @@ class SnakeGameAI:
                     self.human_mode = not self.human_mode
                     print("Human mode:", self.human_mode)
                 
+                if event.key == pygame.K_p:
+                    self.step_by_step = not self.step_by_step
+                    print("Step-by-step mode:", self.step_by_step)
+
                 if self.human_mode:
                     if event.key == pygame.K_UP:
                         new_direction = Direction.UP
@@ -166,11 +172,7 @@ class SnakeGameAI:
                         new_direction = Direction.LEFT
                     elif event.key == pygame.K_RIGHT:
                         new_direction = Direction.RIGHT
-
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_p:
-                    self.step_by_step = not self.step_by_step
-                    print("Step-by-step mode:", self.step_by_step)
+                    self.direction = new_direction
                 
                 if self.step_by_step and event.key == pygame.K_RETURN:
                     self.step_triggered = True
@@ -193,6 +195,7 @@ class SnakeGameAI:
         self.frame_iteration += 1
         if not self.human_mode:
             new_direction = self._move(action)
+            self.snake.insert(0, self.head)
         else:
             x = self.head.x
             y = self.head.y
@@ -205,9 +208,8 @@ class SnakeGameAI:
             elif self.direction == Direction.UP:
                 y -= 1
             self.head = Point(x, y)
-            
-        self.snake.insert(0, self.head)
-        
+            self.snake.insert(0, self.head)
+                    
         reward = 0
 
         if self.is_collision() or self.frame_iteration > 100*len(self.snake):
