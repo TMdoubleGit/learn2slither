@@ -278,13 +278,16 @@ class SnakeGameAI:
         clock_wise = [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
         index = clock_wise.index(self.direction)
 
-        if np.array_equal(action, [1, 0, 0]):
+        if np.array_equal(action, [1, 0, 0, 0]):
             new_dir = clock_wise[index]
-        elif np.array_equal(action, [0, 1, 0]):
+        elif np.array_equal(action, [0, 1, 0, 0]):
             next_index = (index + 1) % 4
             new_dir = clock_wise[next_index]
-        else:
+        elif np.array_equal(action, [0, 0, 1, 0]):
             next_index = (index - 1) % 4
+            new_dir = clock_wise[next_index]
+        elif np.array_equal(action, [0, 0, 0, 1]):
+            next_index = (index + 2) % 4
             new_dir = clock_wise[next_index]
         self.direction = new_dir
 
