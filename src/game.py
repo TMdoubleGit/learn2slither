@@ -40,6 +40,7 @@ class SnakeGameAI:
         self.w = w
         self.h = h
 
+        self.human_mode = False
         self.step_by_step = False
 
         self.board = [
@@ -152,6 +153,21 @@ class SnakeGameAI:
                 pygame.quit()
                 quit()
             elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_h:
+                    self.human_mode = not self.human_mode
+                    print("Human mode:", self.human_mode)
+                
+                if self.human_mode:
+                    if event.key == pygame.K_UP:
+                        new_direction = Direction.UP
+                    elif event.key == pygame.K_DOWN:
+                        new_direction = Direction.DOWN
+                    elif event.key == pygame.K_LEFT:
+                        new_direction = Direction.LEFT
+                    elif event.key == pygame.K_RIGHT:
+                        new_direction = Direction.RIGHT
+
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:
                     self.step_by_step = not self.step_by_step
                     print("Step-by-step mode:", self.step_by_step)
@@ -175,7 +191,21 @@ class SnakeGameAI:
             self.step_triggered = False
 
         self.frame_iteration += 1
-        new_direction = self._move(action)
+        if not self.human_mode:
+            new_direction = self._move(action)
+        else:
+            x = self.head.x
+            y = self.head.y
+            if self.direction == Direction.RIGHT:
+                x += 1
+            elif self.direction == Direction.LEFT:
+                x -= 1
+            elif self.direction == Direction.DOWN:
+                y += 1
+            elif self.direction == Direction.UP:
+                y -= 1
+            self.head = Point(x, y)
+            
         self.snake.insert(0, self.head)
         
         reward = 0

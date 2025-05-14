@@ -99,7 +99,6 @@ def train(training_sessions=None, model_path=None):
         env_old = displayer.display(None, state_old, None, None, False)
 
         final_move = agent.get_action(state_old)
-git 
         if np.array_equal(final_move, [1, 0, 0, 0]):
             action_dir = game.direction
         elif np.array_equal(final_move, [0, 1, 0, 0]):
