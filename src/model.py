@@ -52,22 +52,50 @@ class QTrainer:
             action = torch.unsqueeze(action, 0)
             reward = torch.unsqueeze(reward, 0)
             done = (done, )
-        
+    
+        if action.dim() == 2 and action.shape[1] > 1:
+            action = torch.argmax(action, dim=1).unsqueeze(-1)
+
+        # pred = self.model(state)
+        # target = pred.clone()
+
+        # for idx in range(len(done)):
+        #     Q_new = reward[idx]
+        #     if not done[idx]:
+        #         Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
+        #     action_index = torch.argmax(action).item()
+
+        #     target[idx][action_index] = Q_new
+
         pred = self.model(state)
         target = pred.clone()
 
-        for idx in range(len(done)):
-            Q_new = reward[idx]
-            if not done[idx]:
-                Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
-            action_index = torch.argmax(action).item()
+        next_predictions = self.model(next_state)
 
-            if action_index >= target.shape[1]:
-                print(f"⚠️ Warning: action_index {action_index} is out of bounds! Resetting to 0.")
-                action_index = 0 
+        next_action = torch.max(next_predictions, dim=1)[0]
 
-            target[idx][action_index] = Q_new
-  
+        if isinstance(done, tuple) or isinstance(done, list):
+            done = torch.tensor(done, dtype=torch.bool)
+        elif isinstance(done, bool):
+            done = torch.tensor([done], dtype=torch.bool)
+
+        new_q_value = reward + self.gamma * next_action * (~done)
+
+        if len(action.shape) == 1:
+            action_indices = action.unsqueeze(1)
+        else:
+            action_indices = action
+
+        batch, num_actions = pred.shape
+        action_indices = torch.clamp(action_indices, min=0, max=num_actions - 1)
+
+        # Vérifier les formes avant scatter
+        # assert target.shape == (batch, num_actions), f"target shape: {target.shape}"
+        # assert action_indices.shape == (batch, 1), f"action_indices shape: {action_indices.shape}"
+        # assert new_q_value.unsqueeze(-1).shape == (batch, 1), f"new_q_value shape: {new_q_value.unsqueeze(-1).shape}"
+
+        target.scatter_(1, action_indices, new_q_value.unsqueeze(-1))
+
         self.optimizer.zero_grad()
         loss = self.criterion.forward(target, pred)
         loss.backward()

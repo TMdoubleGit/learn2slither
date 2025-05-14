@@ -17,35 +17,6 @@ class Interpreter:
         self.game = game
         self.snake = game.snake
         self.grid = game.board
-
-    # def relative_to_absolute(self, relative_direction):
-    #     """
-    #     Converts a relative direction (forward, right, left, backward) into an absolute direction
-    #     based on the current direction of the snake.
-
-    #     Args:
-    #         relative_direction (str): One of ["forward", "right", "left", "backward"].
-
-    #     Returns:
-    #         tuple: The absolute direction as a vector (dx, dy).
-    #     """
-    #     absolute_directions = {
-    #         "up": (0, -1),
-    #         "down": (0, 1),
-    #         "left": (-1, 0),
-    #         "right": (1, 0)
-    #     }
-    #     clockwise = ["up", "right", "down", "left"]
-    #     current_index = clockwise.index(self.game.direction.name.lower())
-
-    #     if relative_direction == "forward":
-    #         return absolute_directions[clockwise[current_index]]
-    #     elif relative_direction == "right":
-    #         return absolute_directions[clockwise[(current_index + 1) % 4]]
-    #     elif relative_direction == "left":
-    #         return absolute_directions[clockwise[(current_index - 1) % 4]]
-    #     elif relative_direction == "backward":
-    #         return absolute_directions[clockwise[(current_index + 2) % 4]]
     
     def get_state(self):
         """
@@ -165,7 +136,7 @@ class Interpreter:
             0 < x < grid_width - 1 and 0 < y < grid_height - 1 and
             self.grid[y][x] != WALL and
             (x, y) not in [(segment.x, segment.y) for segment in self.game.snake[1:]] and 
-            ((x, y) not in self.game.red_apples and len(self.game.snake) > 1)
+            ((x, y) not in self.game.red_apples and len(self.game.snake) <= 1)
         ):
             x += direction[0]
             y += direction[1]
