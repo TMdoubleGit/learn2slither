@@ -44,9 +44,9 @@ class SnakeGameAI:
         self.step_by_step = False
 
         self.board = [
-            [WALL if (x == 0 or x == 11 or y == 0 or y == 11) else EMPTY
-             for x in range(self.w // BLOCK_SIZE)]
-            for y in range(self.h // BLOCK_SIZE)
+            [WALL if (x == 0 or x == self.w // BLOCK_SIZE - 1  or y == 0 or y == self.h // BLOCK_SIZE - 1) else EMPTY
+             for x in range(self.w // BLOCK_SIZE - 1)]
+            for y in range(self.h // BLOCK_SIZE - 1)
             ]
 
         if not TRAINING_MODE:
@@ -66,9 +66,9 @@ class SnakeGameAI:
         self.direction = Direction.RIGHT
 
         self.board = [
-            [WALL if (x == 0 or x == 11 or y == 0 or y == 11) else EMPTY
-             for x in range(self.w // BLOCK_SIZE)]
-            for y in range(self.h // BLOCK_SIZE)
+            [WALL if (x == 0 or x == self.w // BLOCK_SIZE - 1 or y == 0 or y == self.h // BLOCK_SIZE - 1) else EMPTY
+             for x in range(self.w // BLOCK_SIZE - 1)]
+            for y in range(self.h // BLOCK_SIZE - 1)
             ]
 
         self.init_snake()
@@ -147,6 +147,45 @@ class SnakeGameAI:
         self.is_game_over = True
         self.game_over_message = game_over_message
 
+
+    def get_action_from_input(self, current_direction, key):
+        if current_direction == Direction.UP:
+            if key == pygame.K_UP:
+                return [1, 0, 0, 0]
+            elif key == pygame.K_RIGHT:
+                return [0, 1, 0, 0]
+            elif key == pygame.K_LEFT:
+                return [0, 0, 1, 0]
+            elif key == pygame.K_DOWN:
+                return [0, 0, 0, 1]
+        elif current_direction == Direction.DOWN:
+            if key == pygame.K_DOWN:
+                return [1, 0, 0, 0]
+            elif key == pygame.K_RIGHT:
+                return [0, 0, 1, 0]
+            elif key == pygame.K_LEFT:
+                return [0, 1, 0, 0]
+            elif key == pygame.K_UP:
+                return [0, 0, 0, 1]
+        elif current_direction == Direction.LEFT:
+            if key == pygame.K_LEFT:
+                return [1, 0, 0, 0]
+            elif key == pygame.K_UP:
+                return [0, 1, 0, 0]
+            elif key == pygame.K_DOWN:
+                return [0, 0, 1, 0]
+            elif key == pygame.K_RIGHT:
+                return [0, 0, 0, 1]
+        elif current_direction == Direction.RIGHT:
+            if key == pygame.K_RIGHT:
+                return [1, 0, 0, 0]
+            elif key == pygame.K_UP:
+                return [0, 0, 1, 0]
+            elif key == pygame.K_DOWN:
+                return [0, 1, 0, 0]
+            elif key == pygame.K_LEFT:
+                return [0, 0, 0, 1]
+        return None
         
     def play_step(self, action):
         new_direction = self.direction
@@ -162,21 +201,9 @@ class SnakeGameAI:
                 if event.key == pygame.K_p:
                     self.step_by_step = not self.step_by_step
                     print("Step-by-step mode:", self.step_by_step)
-
-                if self.human_mode:
-                    if event.key == pygame.K_UP:
-                        new_direction = Direction.UP
-                    elif event.key == pygame.K_DOWN:
-                        new_direction = Direction.DOWN
-                    elif event.key == pygame.K_LEFT:
-                        new_direction = Direction.LEFT
-                    elif event.key == pygame.K_RIGHT:
-                        new_direction = Direction.RIGHT
-                    self.direction = new_direction
-                
+              
                 if self.step_by_step and event.key == pygame.K_RETURN:
                     self.step_triggered = True
-
 
         if self.step_by_step:
             while not getattr(self, 'step_triggered', False):
@@ -192,23 +219,35 @@ class SnakeGameAI:
                         return 0, self.is_game_over, self.score, new_direction
             self.step_triggered = False
 
+        if self.human_mode:
+            while not getattr(self, 'step_triggered', False):
+                x = self.head.x
+                y = self.head.y
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        quit()
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
+                        action = self.get_action_from_input(self.direction, event.key)
+                        self.step_triggered = True
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
+                        action = self.get_action_from_input(self.direction, event.key)
+                        self.step_triggered = True
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
+                        action = self.get_action_from_input(self.direction, event.key)
+                        self.step_triggered = True
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
+                        action = self.get_action_from_input(self.direction, event.key)
+                        self.step_triggered = True
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_h:
+                        self.step_by_step = not self.step_by_step
+                        print("Human mode:", self.step_by_step)
+                        return 0, self.is_game_over, self.score, new_direction
+            self.step_triggered = False
+
         self.frame_iteration += 1
-        if not self.human_mode:
-            new_direction = self._move(action)
-            self.snake.insert(0, self.head)
-        else:
-            x = self.head.x
-            y = self.head.y
-            if self.direction == Direction.RIGHT:
-                x += 1
-            elif self.direction == Direction.LEFT:
-                x -= 1
-            elif self.direction == Direction.DOWN:
-                y += 1
-            elif self.direction == Direction.UP:
-                y -= 1
-            self.head = Point(x, y)
-            self.snake.insert(0, self.head)
+        new_direction = self._move(action)
+        self.snake.insert(0, self.head)
                     
         reward = 0
 
@@ -250,10 +289,10 @@ class SnakeGameAI:
         Updates the grid given the state we are in.
         """
         self.board = [
-            [WALL if (x == 0 or x == len(self.board[0]) - 1 or y == 0 or y == len(self.board) - 1) else EMPTY
-            for x in range(len(self.board[0]))]
-            for y in range(len(self.board))
-        ]
+            [WALL if (x == 0 or x == self.w // BLOCK_SIZE - 1 or y == 0 or y == self.h // BLOCK_SIZE - 1) else EMPTY
+             for x in range(self.w // BLOCK_SIZE - 1)]
+            for y in range(self.h // BLOCK_SIZE - 1)
+            ]
 
         for segment in self.snake:
             self.board[segment.y][segment.x] = SNAKE_BODY
@@ -268,7 +307,7 @@ class SnakeGameAI:
     def is_collision(self, pt=None):
         if pt is None:
             pt = self.head
-        if pt.x > 9 or pt.x < 1 or pt.y > 9 or pt.y < 1:
+        if pt.x > self.w // BLOCK_SIZE - 1 or pt.x < 1 or pt.y > self.h // BLOCK_SIZE - 1 or pt.y < 1:
             return True
         if pt in self.snake[1:]:
             return True

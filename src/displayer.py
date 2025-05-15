@@ -122,10 +122,3 @@ class Displayer:
             time.sleep(1/self.fps)
         
         return "\n".join(output)
-
-    # def display_final(self, action, agent, state_old, state_new, reward):
-    #     """
-    #     Displays both states.
-    #     """
-    #     self.display(None, agent, state_old, reward, False)
-    #     self.display(action, agent, state_new, reward, True)
