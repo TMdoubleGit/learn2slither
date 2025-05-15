@@ -65,11 +65,11 @@ class Displayer:
         output = []
         state_tempo = "(T + 1)" if is_new_state else "(T)"
 
-        if is_new_state == True:
-            output.append(CLEAR + BLUE + pyfiglet.figlet_format("Learn2Slither") + RESET)
-            output.append("Project: Reinforcement Learning Snake AI\n")
-            output.append(f"Game #{self.agent.n_games} - Turn #{self.game.frame_iteration} - Snake length: {len(self.game.snake)} - Score: {self.game.score}\n")
-            output.append(prev_state)
+        # if is_new_state == True:
+        #     output.append(CLEAR + BLUE + pyfiglet.figlet_format("Learn2Slither") + RESET)
+        #     output.append("Project: Reinforcement Learning Snake AI\n")
+        #     output.append(f"Game #{self.agent.n_games} - Turn #{self.game.frame_iteration} - Snake length: {len(self.game.snake)} - Score: {self.game.score}\n")
+        #     output.append(prev_state)
 
         width = len(self.game.board[0])
         height = len(self.game.board)
@@ -104,7 +104,7 @@ class Displayer:
 
         if is_new_state == True:
             output.append(f"\nAction Taken: {action.name} (epsilon = {self.agent.epsilon:.2f}) - Reward: {reward} - Record: {self.agent.record}")
-            output.append("\n" + "=" * 80)
+            output.append("\n" + "=" * 95)
 
         output.append(f"FULL BOARD {state_tempo}".center(23) + "  ||  " + f"VISION {state_tempo}".center(23) + "  ||  " + f"STATE {state_tempo}".center(23))
         output.append("-" * 95)

@@ -11,20 +11,24 @@ import os
 import argparse
 
 
-MAX_MEMORY = 500_000
-BATCH_SIZE = 1_024
-LR = 0.0001
+MAX_MEMORY = 100_000
+BATCH_SIZE = 512
+LR = 0.001
 
 class Agent:
 
     def __init__(self):
         self.n_games = 0
+        self.total_reward = 0
         self.record = 0
-        self.epsilon = 1.0
-        self.max_epsilon = 1.0
-        self.min_epsilon = 0.01
-        self.decay_rate = 0.001
-        self.gamma = 0.99
+        self.epsilon = 0.1
+        self.max_epsilon = 0.1
+        self.min_epsilon = 0.001
+        self.decay_rate = 0.005
+        self.gamma = 0.5
+        self.min_gamma = 0.5
+        self.max_gamma = 0.99
+        self.gamma_growth_rate = 0.005
         self.memory = deque(maxlen=MAX_MEMORY)
         self.model = Linear_QNet(16, 256, 4)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
@@ -60,7 +64,7 @@ class Agent:
         self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
-        self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * self.n_games)
+        self.epsilon = (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * self.n_games)
         final_move = [0, 0, 0, 0]
         state0 = torch.tensor(state, dtype=torch.float)
         prediction = self.model(state0)
@@ -75,6 +79,7 @@ class Agent:
 def train(training_sessions=None, model_path=None):
     plot_score = []
     plot_mean_score = []
+    plot_epsilon = []
     total_score = 0
     agent = Agent()
 
@@ -99,22 +104,12 @@ def train(training_sessions=None, model_path=None):
         env_old = displayer.display(None, state_old, None, None, False)
 
         final_move = agent.get_action(state_old)
-        if np.array_equal(final_move, [1, 0, 0, 0]):
-            action_dir = game.direction
-        elif np.array_equal(final_move, [0, 1, 0, 0]):
-            clockwise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
-            action_dir = clockwise[(clockwise.index(game.direction) + 1) % 4]
-        elif np.array_equal(final_move, [0, 0, 1, 0]):
-            clockwise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
-            action_dir = clockwise[(clockwise.index(game.direction) - 1) % 4]
-        elif np.array_equal(final_move, [0, 0, 0, 1]):
-            clockwise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
-            action_dir = clockwise[(clockwise.index(game.direction) + 2) % 4]
 
         reward, done, score, new_direction = game.play_step(final_move)
         state_new = agent.get_state(game)
+        agent.total_reward += reward
 
-        displayer.display(action_dir, state_new, reward, env_old, True)
+        displayer.display(new_direction, state_new, reward, env_old, True)
 
         agent.train_short_memory(state_old, final_move, reward, state_new, done)
 
@@ -127,8 +122,14 @@ def train(training_sessions=None, model_path=None):
 
             if score > agent.record:
                 agent.record = score
+                agent.gamma = min(agent.gamma + agent.gamma_growth_rate * 2, agent.max_gamma)
             
-            if agent.n_games % 1000 == 0:
+            else: 
+                agent.gamma = agent.min_gamma + (agent.max_gamma - agent.min_gamma) * (1 - np.exp(-agent.gamma_growth_rate * agent.n_games))
+            
+            agent.trainer.gamma = agent.gamma
+            
+            if agent.n_games % 5000 == 0:
                 model_folder_path = './models'
                 if not os.path.exists(model_folder_path):
                     os.makedirs(model_folder_path)
@@ -150,11 +151,18 @@ def train(training_sessions=None, model_path=None):
 
 
             plot_score.append(score)
+            # plot_epsilon.append(agent.epsilon)
             total_score += score
             mean_score = total_score / agent.n_games
             plot_mean_score.append(mean_score)
             plot(plot_score, plot_mean_score)
-            print("human_mode:", game.human_mode)
+
+            # plot_score.append(agent.total_reward)
+            # total_score += reward
+            # mean_score = agent.total_reward / agent.n_games
+            # agent.total_reward = 0
+            # plot_mean_score.append(mean_score)
+            # plot(plot_score, plot_mean_score)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train the Snake AI agent.')

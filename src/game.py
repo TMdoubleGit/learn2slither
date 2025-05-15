@@ -67,8 +67,8 @@ class SnakeGameAI:
 
         self.board = [
             [WALL if (x == 0 or x == self.w // BLOCK_SIZE - 1 or y == 0 or y == self.h // BLOCK_SIZE - 1) else EMPTY
-             for x in range(self.w // BLOCK_SIZE - 1)]
-            for y in range(self.h // BLOCK_SIZE - 1)
+             for x in range(self.w // BLOCK_SIZE)]
+            for y in range(self.h // BLOCK_SIZE)
             ]
 
         self.init_snake()
@@ -240,8 +240,8 @@ class SnakeGameAI:
                         action = self.get_action_from_input(self.direction, event.key)
                         self.step_triggered = True
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_h:
-                        self.step_by_step = not self.step_by_step
-                        print("Human mode:", self.step_by_step)
+                        self.human_mode = not self.human_mode
+                        print("Human mode:", self.human_mode)
                         return 0, self.is_game_over, self.score, new_direction
             self.step_triggered = False
 
@@ -251,30 +251,53 @@ class SnakeGameAI:
                     
         reward = 0
 
-        if self.is_collision() or self.frame_iteration > 100*len(self.snake):
+        if self.is_collision() or self.frame_iteration > 20*len(self.snake):
             self.game_over("Another brick in the wall.... ")
-            reward = BIGGER_NEGATIVE_REWARD
+            reward += BIGGER_NEGATIVE_REWARD
             return reward, self.is_game_over, self.score, new_direction
+
+        green_apple_distance = self.w // BLOCK_SIZE - 2
+        wall_distance = 0
+
+        for i in range(1, self.w // BLOCK_SIZE):
+            next_x = self.head.x + i * (1 if self.direction == Direction.RIGHT else -1 if self.direction == Direction.LEFT else 0)
+            next_y = self.head.y + i * (1 if self.direction == Direction.DOWN else -1 if self.direction == Direction.UP else 0)
             
+            if next_x < 0 or next_x >= self.w // BLOCK_SIZE or next_y < 0 or next_y >= self.h // BLOCK_SIZE:
+                wall_distance = i - 1 
+                break
+
+            next_cell = self.board[next_y][next_x]
+            if next_cell == WALL:
+                wall_distance = i - 1
+                break
+            elif next_cell == GREEN_APPLE:
+                green_apple_distance = i - 1
+        
+        if green_apple_distance < wall_distance:
+            reward -= SMALLER_NEGATIVE_REWARD
+        else:
+            reward += SMALLER_NEGATIVE_REWARD
+
         if (self.head.x, self.head.y) in self.green_apples:
             self.score += 1
-            reward = POSITIVE_REWARD
+            reward += POSITIVE_REWARD
             self.green_apples.remove((self.head.x, self.head.y))
             self.place_new_apple(GREEN_APPLE)
 
         elif (self.head.x, self.head.y) in self.red_apples:
-            reward = NEGATIVE_REWARD
+            reward += NEGATIVE_REWARD
             self.snake.pop()
             self.snake.pop()
             if len(self.snake) == 0:
                 self.game_over("You ate a red apple and died")
-                reward = BIGGER_NEGATIVE_REWARD
+                reward += BIGGER_NEGATIVE_REWARD
                 return reward, self.is_game_over, self.score, new_direction
             self.red_apples.remove((self.head.x, self.head.y))
             self.place_new_apple(RED_APPLE)
         
         else:
-            reward = SMALLER_NEGATIVE_REWARD
+            # reward = SMALLER_NEGATIVE_REWARD
             self.snake.pop()
         
         self._update_board()
@@ -290,8 +313,8 @@ class SnakeGameAI:
         """
         self.board = [
             [WALL if (x == 0 or x == self.w // BLOCK_SIZE - 1 or y == 0 or y == self.h // BLOCK_SIZE - 1) else EMPTY
-             for x in range(self.w // BLOCK_SIZE - 1)]
-            for y in range(self.h // BLOCK_SIZE - 1)
+             for x in range(self.w // BLOCK_SIZE)]
+            for y in range(self.h // BLOCK_SIZE)
             ]
 
         for segment in self.snake:
@@ -307,7 +330,7 @@ class SnakeGameAI:
     def is_collision(self, pt=None):
         if pt is None:
             pt = self.head
-        if pt.x > self.w // BLOCK_SIZE - 1 or pt.x < 1 or pt.y > self.h // BLOCK_SIZE - 1 or pt.y < 1:
+        if pt.x >= self.w // BLOCK_SIZE - 1 or pt.x < 1 or pt.y >= self.h // BLOCK_SIZE - 1 or pt.y < 1:
             return True
         if pt in self.snake[1:]:
             return True

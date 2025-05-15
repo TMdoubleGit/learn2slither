@@ -131,16 +131,15 @@ class Interpreter:
         distance = 0
         grid_height = len(self.grid)
         grid_width = len(self.grid[0])
-
         while (
             0 < x < grid_width - 1 and 0 < y < grid_height - 1 and
             self.grid[y][x] != WALL and
             (x, y) not in [(segment.x, segment.y) for segment in self.game.snake[1:]] and 
-            ((x, y) not in self.game.red_apples and len(self.game.snake) <= 1)
+            ((x, y) not in self.game.red_apples or len(self.game.snake) > 1)
         ):
             x += direction[0]
             y += direction[1]
             distance += 1
-
+        
         return distance / (grid_height - 2)
 
