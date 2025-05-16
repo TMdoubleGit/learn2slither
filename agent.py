@@ -1,6 +1,7 @@
 import torch
 import random
 import numpy as np
+import math
 from collections import deque
 from src.displayer import Displayer
 from src.game import SnakeGameAI, Direction, Point
@@ -12,8 +13,8 @@ import argparse
 
 
 MAX_MEMORY = 100_000
-BATCH_SIZE = 512
-LR = 0.001
+BATCH_SIZE = 1024
+LR = 0.0001
 
 class Agent:
 
@@ -21,14 +22,15 @@ class Agent:
         self.n_games = 0
         self.total_reward = 0
         self.record = 0
-        self.epsilon = 0.1
-        self.max_epsilon = 0.1
+        self.epsilon = 1.0
+        self.max_epsilon = 1.0
         self.min_epsilon = 0.001
-        self.decay_rate = 0.005
-        self.gamma = 0.5
-        self.min_gamma = 0.5
+        self.decay_rate = 0.001
+        self.gamma = 0.99
+        self.min_gamma = 0.7
         self.max_gamma = 0.99
-        self.gamma_growth_rate = 0.005
+        self.gamma_growth_rate = math.log(self.max_gamma / self.min_gamma) / 2000 
+        self.model_type = 'exploration'
         self.memory = deque(maxlen=MAX_MEMORY)
         self.model = Linear_QNet(16, 256, 4)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
@@ -64,14 +66,16 @@ class Agent:
         self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
-        self.epsilon = (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * self.n_games)
+        self.epsilon = (self.max_epsilon - self.min_epsilon) * math.exp(- self.decay_rate * self.n_games)
         final_move = [0, 0, 0, 0]
         state0 = torch.tensor(state, dtype=torch.float)
         prediction = self.model(state0)
         if random.uniform(0, 1) < self.epsilon:
+            self.model_type = 'exploration'
             top_actions = torch.argsort(prediction, descending=True)[:3]
             move = random.choice(top_actions).item()
         else:
+            self.model_type = 'exploitation'
             move = torch.argmax(prediction).item()
         final_move[move] = 1
         return final_move
@@ -122,10 +126,12 @@ def train(training_sessions=None, model_path=None):
 
             if score > agent.record:
                 agent.record = score
-                agent.gamma = min(agent.gamma + agent.gamma_growth_rate * 2, agent.max_gamma)
+                # if agent.gamma <= agent.max_gamma:
+                #     agent.gamma = min(agent.gamma + agent.gamma_growth_rate * 2, agent.max_gamma)
             
-            else: 
-                agent.gamma = agent.min_gamma + (agent.max_gamma - agent.min_gamma) * (1 - np.exp(-agent.gamma_growth_rate * agent.n_games))
+            # else:
+            #     if agent.gamma <= agent.max_gamma: 
+            #         agent.gamma = min(agent.max_gamma, agent.min_gamma * math.exp(agent.gamma_growth_rate * agent.n_games))
             
             agent.trainer.gamma = agent.gamma
             

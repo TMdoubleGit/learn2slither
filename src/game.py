@@ -1,7 +1,7 @@
 import pygame
 import random
 from enum import Enum
-from collections import namedtuple
+from collections import namedtuple, deque, Counter
 import numpy as np
 from src.constants import RED_APPLE, SNAKE_BODY, GREEN_APPLE, WALL, EMPTY, NEGATIVE_REWARD, POSITIVE_REWARD, SMALLER_NEGATIVE_REWARD, BIGGER_NEGATIVE_REWARD, TRAINING_MODE
 from src.interpreter import Interpreter
@@ -42,6 +42,8 @@ class SnakeGameAI:
 
         self.human_mode = False
         self.step_by_step = False
+        self.cycle_memory = deque(maxlen=30)
+        self.cycle_repeat_threshold = 4
 
         self.board = [
             [WALL if (x == 0 or x == self.w // BLOCK_SIZE - 1  or y == 0 or y == self.h // BLOCK_SIZE - 1) else EMPTY
@@ -248,14 +250,21 @@ class SnakeGameAI:
         self.frame_iteration += 1
         new_direction = self._move(action)
         self.snake.insert(0, self.head)
+        self.cycle_memory.append(self.head)
                     
         reward = 0
-
         if self.is_collision() or self.frame_iteration > 20*len(self.snake):
             self.game_over("Another brick in the wall.... ")
             reward += BIGGER_NEGATIVE_REWARD
             return reward, self.is_game_over, self.score, new_direction
 
+        if len(self.cycle_memory) == self.cycle_memory.maxlen:
+            counts = Counter(self.cycle_memory)
+            if counts.most_common(1)[0][1] >= self.cycle_repeat_threshold:
+                self.game_over("Cycle detected")
+                reward += BIGGER_NEGATIVE_REWARD
+                return reward, self.is_game_over, self.score, new_direction
+            
         green_apple_distance = self.w // BLOCK_SIZE - 2
         wall_distance = 0
 
@@ -275,9 +284,9 @@ class SnakeGameAI:
                 green_apple_distance = i - 1
         
         if green_apple_distance < wall_distance:
-            reward -= SMALLER_NEGATIVE_REWARD
+            reward -= 2 * SMALLER_NEGATIVE_REWARD
         else:
-            reward += SMALLER_NEGATIVE_REWARD
+            reward += 3 * SMALLER_NEGATIVE_REWARD
 
         if (self.head.x, self.head.y) in self.green_apples:
             self.score += 1
@@ -298,8 +307,7 @@ class SnakeGameAI:
         
         else:
             # reward = SMALLER_NEGATIVE_REWARD
-            self.snake.pop()
-        
+            self.snake.pop()       
         self._update_board()
         self.interpreter.get_state()
         self._update_ui()
