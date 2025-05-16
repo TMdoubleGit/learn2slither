@@ -25,11 +25,11 @@ class Agent:
         self.epsilon = 1.0
         self.max_epsilon = 1.0
         self.min_epsilon = 0.001
-        self.decay_rate = 0.001
+        self.decay_rate = 0.005
         self.gamma = 0.99
         self.min_gamma = 0.7
         self.max_gamma = 0.99
-        self.gamma_growth_rate = math.log(self.max_gamma / self.min_gamma) / 2000 
+        self.gamma_growth_rate = math.log(self.max_gamma / self.min_gamma) / 2500 
         self.model_type = 'exploration'
         self.memory = deque(maxlen=MAX_MEMORY)
         self.model = Linear_QNet(16, 256, 4)
@@ -60,9 +60,25 @@ class Agent:
             mini_sample = self.memory
 
         states, actions, rewards, next_states, dones = zip(*mini_sample)
+
+        states = torch.tensor(np.array(states), dtype=torch.float)
+        actions = torch.tensor(np.array(actions), dtype=torch.long)
+        actions = torch.argmax(actions, dim=1).unsqueeze(-1)
+        rewards = torch.tensor(np.array(rewards), dtype=torch.float)
+        next_states = torch.tensor(np.array(next_states), dtype=torch.float)
+        dones = torch.tensor(np.array(dones), dtype=torch.bool)
+
         self.trainer.train_step(states, actions, rewards, next_states, dones)
         
     def train_short_memory(self, state, action, reward, next_state, done):
+        state = torch.tensor(state, dtype=torch.float).unsqueeze(0)
+        # action = torch.tensor([action], dtype=torch.long)
+        action = torch.tensor(np.array(action), dtype=torch.long)
+        action = torch.argmax(action).unsqueeze(0)
+        reward = torch.tensor([reward], dtype=torch.float)
+        next_state = torch.tensor(next_state, dtype=torch.float).unsqueeze(0)
+        done = torch.tensor([done], dtype=torch.bool)
+
         self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
@@ -126,12 +142,12 @@ def train(training_sessions=None, model_path=None):
 
             if score > agent.record:
                 agent.record = score
-                # if agent.gamma <= agent.max_gamma:
-                #     agent.gamma = min(agent.gamma + agent.gamma_growth_rate * 2, agent.max_gamma)
+                if agent.gamma <= agent.max_gamma:
+                    agent.gamma = min(agent.gamma + agent.gamma_growth_rate * 2, agent.max_gamma)
             
-            # else:
-            #     if agent.gamma <= agent.max_gamma: 
-            #         agent.gamma = min(agent.max_gamma, agent.min_gamma * math.exp(agent.gamma_growth_rate * agent.n_games))
+            else:
+                if agent.gamma <= agent.max_gamma: 
+                    agent.gamma = min(agent.max_gamma, agent.min_gamma * math.exp(agent.gamma_growth_rate * agent.n_games))
             
             agent.trainer.gamma = agent.gamma
             

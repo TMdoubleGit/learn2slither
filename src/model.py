@@ -7,7 +7,7 @@ import os
 
 class Linear_QNet(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
-        super().__init__()
+        super(Linear_QNet, self).__init__()
         self.input_layer = nn.Linear(input_size, hidden_size)
         self.hidden_layer = nn.Linear(hidden_size, hidden_size)
         self.output_layer = nn.Linear(hidden_size, output_size)
@@ -40,64 +40,81 @@ class QTrainer:
         self.optimizer = optim.Adam(model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
     
-    def train_step(self, state, action, reward, next_state, done):
-        state = torch.tensor(np.array(state), dtype=torch.float)
-        next_state = torch.tensor(np.array(next_state), dtype=torch.float)
-        action = torch.tensor(np.array(action), dtype=torch.long)
-        reward = torch.tensor(np.array(reward), dtype=torch.float)
-        done = torch.tensor(np.array(done), dtype=torch.bool)
+    # def train_step(self, state, action, reward, next_state, done):
+   
+    #     if action.dim() == 2 and action.shape[1] > 1:
+    #         action = torch.argmax(action, dim=1).unsqueeze(-1)
 
-        if len(state.shape) == 1:
-            state = torch.unsqueeze(state, 0)
-            next_state = torch.unsqueeze(next_state, 0)
-            action = torch.unsqueeze(action, 0)
-            reward = torch.unsqueeze(reward, 0)
-            done = (done, )
+    #     pred = self.model(state)
+    #     target = pred.clone()
+
+    #     next_predictions = self.model(next_state)
+
+    #     next_action = torch.max(next_predictions, dim=1)[0]
+
+    #     if isinstance(done, tuple) or isinstance(done, list):
+    #         done = torch.tensor(done, dtype=torch.bool)
+    #     elif isinstance(done, bool):
+    #         done = torch.tensor([done], dtype=torch.bool)
+
+    #     new_q_value = reward + self.gamma * next_action * (~done)
+
+    #     if len(action.shape) == 1:
+    #         action_indices = action.unsqueeze(1)
+    #     else:
+    #         action_indices = action
+
+    #     batch, num_actions = pred.shape
+    #     action_indices = torch.clamp(action_indices, min=0, max=num_actions - 1)
+
+    #     target.scatter_(1, action_indices, new_q_value.unsqueeze(-1))
+
+    #     self.optimizer.zero_grad()
+    #     loss = self.criterion.forward(target, new_q_value)
+    #     loss.backward()
+    #     self.optimizer.step()
+
+
+    def train_step(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        game_overs: torch.Tensor
+    ):
+        """
+        Performs a training step on a batch or a single experience.
+        """
+
+        # Prediction of the Q values based on the current state
+        predictions: torch.Tensor = self.model(states)
     
-        if action.dim() == 2 and action.shape[1] > 1:
-            action = torch.argmax(action, dim=1).unsqueeze(-1)
 
-        # pred = self.model(state)
-        # target = pred.clone()
+        print("Predictions shape:", predictions.shape)
+        print("Actions shape:", actions.shape)
+        # print("Actions.shae unsqueeze(-1):", actions.unsqueeze(-1).shape)
+        
+        if actions.dim() == 1:
+            actions = actions.unsqueeze(1)
+        
+        print("New actions shape:", actions.shape)
 
-        # for idx in range(len(done)):
-        #     Q_new = reward[idx]
-        #     if not done[idx]:
-        #         Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
-        #     action_index = torch.argmax(action).item()
+        q_value = predictions.gather(1, actions).squeeze(1)
 
-        #     target[idx][action_index] = Q_new
+        with torch.no_grad():
 
-        pred = self.model(state)
-        target = pred.clone()
+            # Prediction of the Q values for the next state
+            next_predictions = self.model(next_states)
 
-        next_predictions = self.model(next_state)
+            # Get the maximum Q value for the next state
+            next_action = torch.max(next_predictions, dim=1)[0]
 
-        next_action = torch.max(next_predictions, dim=1)[0]
+            # Compute the target Q values
+            new_q_value = rewards + (self.gamma * next_action * (~game_overs))
 
-        if isinstance(done, tuple) or isinstance(done, list):
-            done = torch.tensor(done, dtype=torch.bool)
-        elif isinstance(done, bool):
-            done = torch.tensor([done], dtype=torch.bool)
-
-        new_q_value = reward + self.gamma * next_action * (~done)
-
-        if len(action.shape) == 1:
-            action_indices = action.unsqueeze(1)
-        else:
-            action_indices = action
-
-        batch, num_actions = pred.shape
-        action_indices = torch.clamp(action_indices, min=0, max=num_actions - 1)
-
-        # Vérifier les formes avant scatter
-        # assert target.shape == (batch, num_actions), f"target shape: {target.shape}"
-        # assert action_indices.shape == (batch, 1), f"action_indices shape: {action_indices.shape}"
-        # assert new_q_value.unsqueeze(-1).shape == (batch, 1), f"new_q_value shape: {new_q_value.unsqueeze(-1).shape}"
-
-        target.scatter_(1, action_indices, new_q_value.unsqueeze(-1))
-
+        # Update the model
         self.optimizer.zero_grad()
-        loss = self.criterion.forward(target, pred)
+        loss = self.criterion.forward(q_value, new_q_value)
         loss.backward()
         self.optimizer.step()

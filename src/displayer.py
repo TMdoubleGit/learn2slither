@@ -61,8 +61,8 @@ class Displayer:
             state (np.ndarray): The state of the environment as a NumPy array.
         """
         if TRAINING_MODE:
-            if is_new_state == True:
-                print(f"Action Taken: {action.name} (epsilon = {self.agent.epsilon:.2f}, {self.agent.model_type}, gamma = {self.agent.gamma:.2f}) - Reward: {reward} - Record: {self.agent.record}")
+            # if is_new_state == True:
+            #     print(f"Action Taken: {action.name} (epsilon = {self.agent.epsilon:.2f}, {self.agent.model_type}, gamma = {self.agent.gamma:.2f}) - Reward: {reward} - Record: {self.agent.record}")
             return
         output = []
         state_tempo = "(T + 1)" if is_new_state else "(T)"

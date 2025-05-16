@@ -286,7 +286,7 @@ class SnakeGameAI:
         if green_apple_distance < wall_distance:
             reward -= 2 * SMALLER_NEGATIVE_REWARD
         else:
-            reward += 3 * SMALLER_NEGATIVE_REWARD
+            reward += SMALLER_NEGATIVE_REWARD
 
         if (self.head.x, self.head.y) in self.green_apples:
             self.score += 1
