@@ -9,12 +9,14 @@ class Linear_QNet(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(Linear_QNet, self).__init__()
         self.input_layer = nn.Linear(input_size, hidden_size)
-        self.hidden_layer = nn.Linear(hidden_size, hidden_size)
-        self.output_layer = nn.Linear(hidden_size, output_size)
+        self.hidden_layer1 = nn.Linear(hidden_size, hidden_size // 2)
+        self.hidden_layer2 = nn.Linear(hidden_size // 2, hidden_size //2)
+        self.output_layer = nn.Linear(hidden_size // 2, output_size)
     
     def forward(self, x):
         x = F.relu(self.input_layer(x))
-        x = F.relu(self.hidden_layer(x))
+        x = F.relu(self.hidden_layer1(x))
+        x = F.relu(self.hidden_layer2(x))
         x = self.output_layer(x)
         return x
     
@@ -89,16 +91,9 @@ class QTrainer:
 
         # Prediction of the Q values based on the current state
         predictions: torch.Tensor = self.model(states)
-    
-
-        print("Predictions shape:", predictions.shape)
-        print("Actions shape:", actions.shape)
-        # print("Actions.shae unsqueeze(-1):", actions.unsqueeze(-1).shape)
         
         if actions.dim() == 1:
             actions = actions.unsqueeze(1)
-        
-        print("New actions shape:", actions.shape)
 
         q_value = predictions.gather(1, actions).squeeze(1)
 

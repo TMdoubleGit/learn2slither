@@ -32,7 +32,7 @@ class Agent:
         self.gamma_growth_rate = math.log(self.max_gamma / self.min_gamma) / 2500 
         self.model_type = 'exploration'
         self.memory = deque(maxlen=MAX_MEMORY)
-        self.model = Linear_QNet(16, 256, 4)
+        self.model = Linear_QNet(16, 128, 4)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
         self.interpreter = None
 
