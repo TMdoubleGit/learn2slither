@@ -36,9 +36,9 @@ class SnakeGameAI:
     nb_red_apples = 1
     nb_green_apples = 2
 
-    def __init__(self, w=BLOCK_SIZE * 12, h=BLOCK_SIZE * 12):
-        self.w = w
-        self.h = h
+    def __init__(self, w, h):
+        self.w = (w + 2) * BLOCK_SIZE
+        self.h = (h + 2) * BLOCK_SIZE
 
         self.human_mode = False
         self.step_by_step = False

@@ -96,10 +96,9 @@ class Agent:
         final_move[move] = 1
         return final_move
 
-def train(training_sessions=None, model_path=None):
+def train(training_sessions=None, model_path=None, board_size=10):
     plot_score = []
     plot_mean_score = []
-    plot_epsilon = []
     total_score = 0
     agent = Agent()
 
@@ -115,7 +114,7 @@ def train(training_sessions=None, model_path=None):
             agent.gamma = metadata.get('gamma', 0.99)
             agent.model.eval()
 
-    game = SnakeGameAI()
+    game = SnakeGameAI(w=board_size, h=board_size)
     displayer = Displayer(game, agent)
 
     while training_sessions is None or agent.n_games < training_sessions:
@@ -190,6 +189,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train the Snake AI agent.')
     parser.add_argument('--sessions', type=int, default=None, help='Number of training sessions (default: None for infinite training)')
     parser.add_argument('--model_path', type=str, default=None, help='Path to a previously saved model (default: None)')
+    parser.add_argument('--board_size', type=int, help='Width of the game board (default: 10)')
     args = parser.parse_args()
-    train(training_sessions=args.sessions, model_path=args.model_path)
+    train(training_sessions=args.sessions, model_path=args.model_path, board_size=args.board_size)
     

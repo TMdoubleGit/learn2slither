@@ -85,8 +85,10 @@ class Interpreter:
             distance += 1
             x += direction[0]
             y += direction[1]
-        
-        return distance / (grid_height - 2)
+        if direction == (0, -1) or direction == (0, 1):
+            return distance / (grid_height - 2)
+        else:
+            return distance / (grid_width - 2)
 
     def _distance_apple(self, direction, apple_type):
         """
@@ -110,7 +112,10 @@ class Interpreter:
 
         while (0 < x < grid_width - 1 and 0 < y < grid_height - 1):
             if (x, y) in apples:
-                return distance / (grid_height - 2)
+                if direction == (0, -1) or direction == (0, 1):
+                    return distance / (grid_height - 2)
+                else:
+                    return distance / (grid_width - 2)
             distance += 1
             x += direction[0]
             y += direction[1]
@@ -141,5 +146,8 @@ class Interpreter:
             y += direction[1]
             distance += 1
         
-        return distance / (grid_height - 2)
+        if direction == (0, -1) or direction == (0, 1):
+            return distance / (grid_height - 2)
+        else:
+            return distance / (grid_width - 2)
 
