@@ -7,7 +7,7 @@ plt.ion()
 
 
 def plot(scores, mean_scores, save_path=None):
-    if c.GRAPHIC_MODE:
+    if c.PLOT_RESULTS_MODE:
         display.clear_output(wait=True)
         display.display(plt.gcf())
     plt.clf()
@@ -20,7 +20,7 @@ def plot(scores, mean_scores, save_path=None):
     plt.text(len(scores)-1, scores[-1], str(scores[-1]))
     plt.text(len(mean_scores)-1, mean_scores[-1], str(mean_scores[-1]))
     plt.legend()
-    if c.GRAPHIC_MODE:
+    if c.PLOT_RESULTS_MODE:
         plt.pause(0.1)
         plt.show(block=False)
 

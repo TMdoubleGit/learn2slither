@@ -9,12 +9,12 @@ class Displayer:
         self.agent = agent
         self.fps = fps
 
-        if not c.GRAPHIC_MODE:
+        if c.GRAPHIC_MODE:
             print(c.CLEAR + c.BLUE +
                   pyfiglet.figlet_format("Learn2Slither") + c.RESET)
             print("Reinforcement Learning Snake Agent")
-            print("The snake makes decisions based\
-                only on its 4-directional vision.\n")
+            print("The snake makes decisions based" +
+                  "only on its 4-directional vision.\n")
 
     def get_vision_grid(self):
         """

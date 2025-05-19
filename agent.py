@@ -211,11 +211,16 @@ if __name__ == '__main__':
     parser.add_argument('--learning_off',
                         action='store_true',
                         help='Disable learning (no model training)')
+    parser.add_argument('--no_plot',
+                        action='store_true',
+                        help='Disable learning (no model training)')
     args = parser.parse_args()
     if args.visual_off:
         c.GRAPHIC_MODE = False
     if args.learning_off:
         c.LEARNING_MODE = False
+    if args.no_plot:
+        c.PLOT_RESULTS_MODE = False
     train(
         training_sessions=args.sessions,
         model_path=args.model_path,
