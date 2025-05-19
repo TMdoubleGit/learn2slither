@@ -3,11 +3,11 @@ import random
 from enum import Enum
 from collections import namedtuple, deque, Counter
 import numpy as np
-from src.constants import RED_APPLE, SNAKE_BODY, GREEN_APPLE, WALL, EMPTY, NEGATIVE_REWARD, POSITIVE_REWARD, SMALLER_NEGATIVE_REWARD, BIGGER_NEGATIVE_REWARD, TRAINING_MODE
+import src.constants as c
 from src.interpreter import Interpreter
 
 pygame.init()
-font = pygame.font.Font('arial.ttf', 20)
+font = pygame.font.Font('arial.ttf', 24)
 
 
 class Direction(Enum):
@@ -15,30 +15,19 @@ class Direction(Enum):
     RIGHT = 2
     DOWN = 3
     LEFT = 4
-    
-Point = namedtuple('Point', 'x, y')
-WHITE = (255, 255, 255)
-RED = (200,0,0)
-LIGHT_BLUE = (173, 216, 230)
-BLUE1 = (0, 0, 255)
-BLUE2 = (0, 100, 255)
-GREEN1 = (0, 150, 0)
-GREEN2 = (0, 255, 0)
-GRAY = (128, 128, 128)
-BLACK = (0,0,0)
 
-BLOCK_SIZE = 20
-SPEED = 10
+
+Point = namedtuple('Point', 'x, y')
 
 
 class SnakeGameAI:
-    
+
     nb_red_apples = 1
     nb_green_apples = 2
 
     def __init__(self, w, h):
-        self.w = (w + 2) * BLOCK_SIZE
-        self.h = (h + 2) * BLOCK_SIZE
+        self.w = (w + 2) * c.BLOCK_SIZE
+        self.h = (h + 2) * c.BLOCK_SIZE
 
         self.human_mode = False
         self.step_by_step = False
@@ -46,12 +35,14 @@ class SnakeGameAI:
         self.cycle_repeat_threshold = 4
 
         self.board = [
-            [WALL if (x == 0 or x == self.w // BLOCK_SIZE - 1  or y == 0 or y == self.h // BLOCK_SIZE - 1) else EMPTY
-             for x in range(self.w // BLOCK_SIZE - 1)]
-            for y in range(self.h // BLOCK_SIZE - 1)
+            [c.WALL if (x == 0 or x == self.w // c.BLOCK_SIZE - 1
+                        or y == 0 or y == self.h // c.BLOCK_SIZE - 1)
+                else c.EMPTY
+             for x in range(self.w // c.BLOCK_SIZE - 1)]
+            for y in range(self.h // c.BLOCK_SIZE - 1)
             ]
 
-        if not TRAINING_MODE:
+        if c.GRAPHIC_MODE:
             self.display = pygame.display.set_mode((self.w, self.h))
             pygame.display.set_caption('Snake')
             self.clock = pygame.time.Clock()
@@ -62,15 +53,15 @@ class SnakeGameAI:
 
         self.interpreter = Interpreter(self)
 
-        
-
     def reset(self):
         self.direction = Direction.RIGHT
 
         self.board = [
-            [WALL if (x == 0 or x == self.w // BLOCK_SIZE - 1 or y == 0 or y == self.h // BLOCK_SIZE - 1) else EMPTY
-             for x in range(self.w // BLOCK_SIZE)]
-            for y in range(self.h // BLOCK_SIZE)
+            [c.WALL if (x == 0 or x == self.w // c.BLOCK_SIZE - 1
+                        or y == 0 or y == self.h // c.BLOCK_SIZE - 1)
+                else c.EMPTY
+             for x in range(self.w // c.BLOCK_SIZE)]
+            for y in range(self.h // c.BLOCK_SIZE)
             ]
 
         self.init_snake()
@@ -82,35 +73,33 @@ class SnakeGameAI:
             (self.h - 2) * (self.w - 2)
         ):
             raise ValueError("Too many apples or snake is too long")
-        
+
         self.score = 0
         self.green_apples = []
         self.current_green_apples = 0
         for _ in range(self.nb_green_apples):
-            self.place_new_apple(GREEN_APPLE)
+            self.place_new_apple(c.GREEN_APPLE)
 
         self.red_apples = []
         self.current_red_apples = 0
         for _ in range(self.nb_red_apples):
-            self.place_new_apple(RED_APPLE)
+            self.place_new_apple(c.RED_APPLE)
 
         self.is_game_over = False
         self.game_over_message = ""
         self.frame_iteration = 0
 
-
     def get_random_empty_cell(self):
         empty_cells = {
             (x, y)
-            for x in range(1, self.w // BLOCK_SIZE - 1)
-            for y in range(1, self.h // BLOCK_SIZE - 1)
-            if self.board[y][x] == EMPTY
+            for x in range(1, self.w // c.BLOCK_SIZE - 1)
+            for y in range(1, self.h // c.BLOCK_SIZE - 1)
+            if self.board[y][x] == c.EMPTY
         }
         if not empty_cells:
             return None, None
         x, y = random.choice(list(empty_cells))
         return x, y
-
 
     def init_snake(self):
         initialized_snake = False
@@ -118,37 +107,39 @@ class SnakeGameAI:
             x, y = self.get_random_empty_cell()
             if x is not None and y is not None and x > 2:
                 self.head = Point(x, y)
-                self.snake = [self.head, 
-                              Point(self.head.x-1, self.head.y),
-                              Point(self.head.x-(2), self.head.y)]
-                initialized_snake = True
+                if self.board[y][x - 1] == c.EMPTY and\
+                        self.board[y][x - 2] == c.EMPTY:
+                    self.snake = [self.head,
+                                  Point(self.head.x-1, self.head.y),
+                                  Point(self.head.x-(2), self.head.y)]
+                    self.board[y][x] = c.SNAKE_HEAD
+                    self.board[y][x - 1] = c.SNAKE_BODY
+                    self.board[y][x - 2] = c.SNAKE_BODY
+                    initialized_snake = True
                 break
 
-
-    def place_new_apple (self, apple):
+    def place_new_apple(self, apple):
         x, y = self.get_random_empty_cell()
         if x is not None and y is not None:
             self.board[y][x] = apple
-            if apple == RED_APPLE:
+            if apple == c.RED_APPLE:
                 self.red_apples.append((x, y))
                 self.current_red_apples += 1
-            elif apple  == GREEN_APPLE:
+            elif apple == c.GREEN_APPLE:
                 self.green_apples.append((x, y))
                 self.current_green_apples += 1
         else:
-            if apple == RED_APPLE:
+            if apple == c.RED_APPLE:
                 self.current_red_apples -= 1
                 self.game_over("Can't place a new red apple")
-            elif apple  == GREEN_APPLE:
+            elif apple == c.GREEN_APPLE:
                 self.current_green_apples -= 1
                 if self.current_green_apples == 0:
                     self.game_over("No more green apples, you win!")
 
-
     def game_over(self, game_over_message):
         self.is_game_over = True
         self.game_over_message = game_over_message
-
 
     def get_action_from_input(self, current_direction, key):
         if current_direction == Direction.UP:
@@ -188,7 +179,7 @@ class SnakeGameAI:
             elif key == pygame.K_LEFT:
                 return [0, 0, 0, 1]
         return None
-        
+
     def play_step(self, action):
         new_direction = self.direction
         for event in pygame.event.get():
@@ -199,11 +190,11 @@ class SnakeGameAI:
                 if event.key == pygame.K_h:
                     self.human_mode = not self.human_mode
                     print("Human mode:", self.human_mode)
-                
+
                 if event.key == pygame.K_p:
                     self.step_by_step = not self.step_by_step
                     print("Step-by-step mode:", self.step_by_step)
-              
+
                 if self.step_by_step and event.key == pygame.K_RETURN:
                     self.step_triggered = True
 
@@ -213,9 +204,11 @@ class SnakeGameAI:
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         quit()
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                    elif event.type == pygame.KEYDOWN \
+                            and event.key == pygame.K_RETURN:
                         self.step_triggered = True
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                    elif event.type == pygame.KEYDOWN \
+                            and event.key == pygame.K_p:
                         self.step_by_step = not self.step_by_step
                         print("Step-by-step mode:", self.step_by_step)
                         return 0, self.is_game_over, self.score, new_direction
@@ -223,25 +216,32 @@ class SnakeGameAI:
 
         if self.human_mode:
             while not getattr(self, 'step_triggered', False):
-                x = self.head.x
-                y = self.head.y
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         quit()
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-                        action = self.get_action_from_input(self.direction, event.key)
+                    elif event.type == pygame.KEYDOWN \
+                            and event.key == pygame.K_UP:
+                        action = self.get_action_from_input(
+                            self.direction, event.key)
                         self.step_triggered = True
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-                        action = self.get_action_from_input(self.direction, event.key)
+                    elif event.type == pygame.KEYDOWN \
+                            and event.key == pygame.K_DOWN:
+                        action = self.get_action_from_input(
+                            self.direction, event.key)
                         self.step_triggered = True
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                        action = self.get_action_from_input(self.direction, event.key)
+                    elif event.type == pygame.KEYDOWN \
+                            and event.key == pygame.K_LEFT:
+                        action = self.get_action_from_input(
+                            self.direction, event.key)
                         self.step_triggered = True
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                        action = self.get_action_from_input(self.direction, event.key)
+                    elif event.type == pygame.KEYDOWN \
+                            and event.key == pygame.K_RIGHT:
+                        action = self.get_action_from_input(
+                            self.direction, event.key)
                         self.step_triggered = True
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_h:
+                    elif event.type == pygame.KEYDOWN \
+                            and event.key == pygame.K_h:
                         self.human_mode = not self.human_mode
                         print("Human mode:", self.human_mode)
                         return 0, self.is_game_over, self.score, new_direction
@@ -251,68 +251,74 @@ class SnakeGameAI:
         new_direction = self._move(action)
         self.snake.insert(0, self.head)
         self.cycle_memory.append(self.head)
-                    
+
         reward = 0
         if self.is_collision() or self.frame_iteration > 20*len(self.snake):
             self.game_over("Another brick in the wall.... ")
-            reward += BIGGER_NEGATIVE_REWARD
+            reward += c.BIGGER_NEGATIVE_REWARD
             return reward, self.is_game_over, self.score, new_direction
 
         if len(self.cycle_memory) == self.cycle_memory.maxlen:
             counts = Counter(self.cycle_memory)
             if counts.most_common(1)[0][1] >= self.cycle_repeat_threshold:
                 self.game_over("Cycle detected")
-                reward += BIGGER_NEGATIVE_REWARD
+                reward += c.BIGGER_NEGATIVE_REWARD
                 return reward, self.is_game_over, self.score, new_direction
-            
-        green_apple_distance = self.w // BLOCK_SIZE - 2
+
+        green_apple_distance = self.w // c.BLOCK_SIZE - 2
         wall_distance = 0
 
-        for i in range(1, self.w // BLOCK_SIZE):
-            next_x = self.head.x + i * (1 if self.direction == Direction.RIGHT else -1 if self.direction == Direction.LEFT else 0)
-            next_y = self.head.y + i * (1 if self.direction == Direction.DOWN else -1 if self.direction == Direction.UP else 0)
-            
-            if next_x < 0 or next_x >= self.w // BLOCK_SIZE or next_y < 0 or next_y >= self.h // BLOCK_SIZE:
-                wall_distance = i - 1 
+        for i in range(1, self.w // c.BLOCK_SIZE):
+            next_x = self.head.x + i * (
+                1 if self.direction == Direction.RIGHT
+                else -1 if self.direction == Direction.LEFT
+                else 0)
+            next_y = self.head.y + i * (
+                1 if self.direction == Direction.DOWN
+                else -1 if self.direction == Direction.UP
+                else 0)
+
+            if next_x < 0 or next_x >= self.w // c.BLOCK_SIZE\
+                    or next_y < 0 or next_y >= self.h // c.BLOCK_SIZE:
+                wall_distance = i - 1
                 break
 
             next_cell = self.board[next_y][next_x]
-            if next_cell == WALL:
+            if next_cell == c.WALL:
                 wall_distance = i - 1
                 break
-            elif next_cell == GREEN_APPLE:
+            elif next_cell == c.GREEN_APPLE:
                 green_apple_distance = i - 1
-        
+
         if green_apple_distance < wall_distance:
-            reward -= 2 * SMALLER_NEGATIVE_REWARD
+            reward -= 2 * c.SMALLER_NEGATIVE_REWARD
         else:
-            reward += SMALLER_NEGATIVE_REWARD
+            reward += c.SMALLER_NEGATIVE_REWARD
 
         if (self.head.x, self.head.y) in self.green_apples:
             self.score += 1
-            reward += POSITIVE_REWARD
+            reward += c.POSITIVE_REWARD
             self.green_apples.remove((self.head.x, self.head.y))
-            self.place_new_apple(GREEN_APPLE)
+            self.place_new_apple(c.GREEN_APPLE)
 
         elif (self.head.x, self.head.y) in self.red_apples:
-            reward += NEGATIVE_REWARD
+            reward += c.NEGATIVE_REWARD
             self.snake.pop()
             self.snake.pop()
             if len(self.snake) == 0:
                 self.game_over("You ate a red apple and died")
-                reward += BIGGER_NEGATIVE_REWARD
+                reward += c.BIGGER_NEGATIVE_REWARD
                 return reward, self.is_game_over, self.score, new_direction
             self.red_apples.remove((self.head.x, self.head.y))
-            self.place_new_apple(RED_APPLE)
-        
+            self.place_new_apple(c.RED_APPLE)
+
         else:
-            # reward = SMALLER_NEGATIVE_REWARD
-            self.snake.pop()       
+            self.snake.pop()
         self._update_board()
         self.interpreter.get_state()
         self._update_ui()
-        if not TRAINING_MODE and self.clock:
-            self.clock.tick(SPEED)
+        if c.GRAPHIC_MODE and self.clock:
+            self.clock.tick(c.SPEED)
         return reward, self.is_game_over, self.score, new_direction
 
     def _update_board(self):
@@ -320,64 +326,108 @@ class SnakeGameAI:
         Updates the grid given the state we are in.
         """
         self.board = [
-            [WALL if (x == 0 or x == self.w // BLOCK_SIZE - 1 or y == 0 or y == self.h // BLOCK_SIZE - 1) else EMPTY
-             for x in range(self.w // BLOCK_SIZE)]
-            for y in range(self.h // BLOCK_SIZE)
+            [c.WALL if (x == 0 or x == self.w // c.BLOCK_SIZE - 1
+                        or y == 0 or y == self.h // c.BLOCK_SIZE - 1)
+                else c.EMPTY
+             for x in range(self.w // c.BLOCK_SIZE)]
+            for y in range(self.h // c.BLOCK_SIZE)
             ]
 
         for segment in self.snake:
-            self.board[segment.y][segment.x] = SNAKE_BODY
+            self.board[segment.y][segment.x] = c.SNAKE_BODY
 
         for apple in self.green_apples:
-            self.board[apple[1]][apple[0]] = GREEN_APPLE
+            self.board[apple[1]][apple[0]] = c.GREEN_APPLE
 
         for apple in self.red_apples:
-            self.board[apple[1]][apple[0]] = RED_APPLE
-
+            self.board[apple[1]][apple[0]] = c.RED_APPLE
 
     def is_collision(self, pt=None):
         if pt is None:
             pt = self.head
-        if pt.x >= self.w // BLOCK_SIZE - 1 or pt.x < 1 or pt.y >= self.h // BLOCK_SIZE - 1 or pt.y < 1:
+        if pt.x >= self.w // c.BLOCK_SIZE - 1 or pt.x < 1\
+                or pt.y >= self.h // c.BLOCK_SIZE - 1 or pt.y < 1:
             return True
         if pt in self.snake[1:]:
             return True
-        
+
         return False
-        
+
     def _update_ui(self):
-        if TRAINING_MODE:
+        if not c.GRAPHIC_MODE:
             return
-        self.display.fill(BLACK)
+        self.display.fill(c.BLACK)
 
-        pygame.draw.rect(self.display, GRAY, pygame.Rect(0, 0, self.w, BLOCK_SIZE))
-        pygame.draw.rect(self.display, GRAY, pygame.Rect(0, self.h - BLOCK_SIZE, self.w, BLOCK_SIZE))
-        pygame.draw.rect(self.display, GRAY, pygame.Rect(0, 0, BLOCK_SIZE, self.h))
-        pygame.draw.rect(self.display, GRAY, pygame.Rect(self.w - BLOCK_SIZE, 0, BLOCK_SIZE, self.h))
+        pygame.draw.rect(
+            self.display,
+            c.GRAY1,
+            pygame.Rect(0, 0, self.w, c.BLOCK_SIZE))
+        pygame.draw.rect(
+            self.display,
+            c.GRAY1,
+            pygame.Rect(0, self.h - c.BLOCK_SIZE, self.w, c.BLOCK_SIZE))
+        pygame.draw.rect(
+            self.display,
+            c.GRAY1,
+            pygame.Rect(0, 0, c.BLOCK_SIZE, self.h))
+        pygame.draw.rect(
+            self.display,
+            c.GRAY1,
+            pygame.Rect(self.w - c.BLOCK_SIZE, 0, c.BLOCK_SIZE, self.h))
 
-        for x in range(0, self.w, BLOCK_SIZE):
-            pygame.draw.line(self.display, WHITE, (x, 0), (x, self.h))
+        for x in range(0, self.w, c.BLOCK_SIZE):
+            pygame.draw.line(self.display, c.WHITE, (x, 0), (x, self.h))
 
-        for y in range(0, self.h, BLOCK_SIZE):
-            pygame.draw.line(self.display, WHITE, (0, y), (self.w, y))
+        for y in range(0, self.h, c.BLOCK_SIZE):
+            pygame.draw.line(self.display, c.WHITE, (0, y), (self.w, y))
 
         for i, pt in enumerate(self.snake):
-            color = LIGHT_BLUE if i == 0 else BLUE1
-            pygame.draw.rect(self.display, color, pygame.Rect(pt.x * BLOCK_SIZE, pt.y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
-            
+            color = c.LIGHT_BLUE if i == 0 else c.BLUE1
+            pygame.draw.rect(
+                self.display,
+                color,
+                pygame.Rect(
+                    pt.x * c.BLOCK_SIZE,
+                    pt.y * c.BLOCK_SIZE,
+                    c.BLOCK_SIZE,
+                    c.BLOCK_SIZE))
+
         for apple in self.green_apples:
-            pygame.draw.rect(self.display, GREEN1, pygame.Rect(apple[0] * BLOCK_SIZE, apple[1]* BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
-            pygame.draw.rect(self.display, GREEN2, pygame.Rect(apple[0]* BLOCK_SIZE+ 4 , apple[1]* BLOCK_SIZE + 4, 12, 12))
+            pygame.draw.rect(
+                self.display,
+                c.GREEN1,
+                pygame.Rect(
+                    apple[0] * c.BLOCK_SIZE,
+                    apple[1] * c.BLOCK_SIZE,
+                    c.BLOCK_SIZE,
+                    c.BLOCK_SIZE))
+            pygame.draw.rect(
+                self.display,
+                c.GREEN2,
+                pygame.Rect(
+                    apple[0] * c.BLOCK_SIZE + 4,
+                    apple[1] * c.BLOCK_SIZE + 4, 16, 16))
 
         for apple in self.red_apples:
-            pygame.draw.rect(self.display, RED, pygame.Rect(apple[0]* BLOCK_SIZE, apple[1]* BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
-        
-        text = font.render("Score: " + str(self.score), True, WHITE)
+            pygame.draw.rect(
+                self.display,
+                c.RED1,
+                pygame.Rect(
+                    apple[0] * c.BLOCK_SIZE,
+                    apple[1] * c.BLOCK_SIZE,
+                    c.BLOCK_SIZE,
+                    c.BLOCK_SIZE))
+
+        text = font.render("Score: " + str(self.score), True, c.WHITE)
         self.display.blit(text, [0, 0])
         pygame.display.flip()
-        
+
     def _move(self, action):
-        clock_wise = [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
+        clock_wise = [
+            Direction.UP,
+            Direction.RIGHT,
+            Direction.DOWN,
+            Direction.LEFT]
         index = clock_wise.index(self.direction)
 
         if np.array_equal(action, [1, 0, 0, 0]):
@@ -403,6 +453,6 @@ class SnakeGameAI:
             y += 1
         elif self.direction == Direction.UP:
             y -= 1
-            
+
         self.head = Point(x, y)
         return self.direction
