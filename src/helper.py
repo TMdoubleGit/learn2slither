@@ -7,9 +7,9 @@ plt.ion()
 
 
 def plot(scores, mean_scores, save_path=None):
-    # if c.GRAPHIC_MODE:
-    display.clear_output(wait=True)
-    display.display(plt.gcf())
+    if c.GRAPHIC_MODE:
+        display.clear_output(wait=True)
+        display.display(plt.gcf())
     plt.clf()
     plt.title('Training...')
     plt.xlabel('Number of games')
@@ -20,9 +20,9 @@ def plot(scores, mean_scores, save_path=None):
     plt.text(len(scores)-1, scores[-1], str(scores[-1]))
     plt.text(len(mean_scores)-1, mean_scores[-1], str(mean_scores[-1]))
     plt.legend()
-    # if c.GRAPHIC_MODE:
-    plt.pause(0.1)
-    plt.show(block=False)
+    if c.GRAPHIC_MODE:
+        plt.pause(0.1)
+        plt.show(block=False)
 
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
