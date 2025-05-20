@@ -191,6 +191,30 @@ def train(training_sessions=None, model_path=None, board_size=10):
             plot_mean_score.append(mean_score)
             plot(plot_score, plot_mean_score)
 
+    model_folder_path = './models'
+    if not os.path.exists(model_folder_path):
+        os.makedirs(model_folder_path)
+    new_dir_path = "./models/game_" + str(agent.n_games)
+    if not os.path.exists(new_dir_path):
+        os.makedirs(new_dir_path)
+    metadata = {
+        'n_games': agent.n_games,
+        'record': agent.record,
+        'epsilon': agent.epsilon,
+        'max_epsilon': agent.max_epsilon,
+        'min_epsilon': agent.min_epsilon,
+        'decay_rate': agent.decay_rate,
+        'gamma': agent.gamma
+    }
+    agent.model.save(
+        f"./models/game_{agent.n_games}/model_{agent.n_games}.pth",
+        metadata=metadata)
+    plot_path = f"{new_dir_path}/plot_{agent.n_games}.png"
+    plot(plot_score, plot_mean_score, save_path=plot_path)
+    print(f"Model saved to {new_dir_path}")
+    print(f"Training completed after {agent.n_games} games.")
+    print(f"Record: {agent.record}")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train the Snake AI agent.')
