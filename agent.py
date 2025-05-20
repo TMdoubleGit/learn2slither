@@ -204,6 +204,7 @@ if __name__ == '__main__':
                             saved model (default: None)')
     parser.add_argument('--board_size',
                         type=int,
+                        default=10,
                         help='Width of the game board (default: 10)')
     parser.add_argument('--visual_off',
                         action='store_true',
