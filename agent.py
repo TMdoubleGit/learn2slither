@@ -25,7 +25,7 @@ class Agent:
         self.record = 0
         self.epsilon = 1.0
         self.max_epsilon = 1.0
-        self.min_epsilon = 0.01
+        self.min_epsilon = 0.001
         self.decay_rate = 0.005
         self.gamma = 0.99
         self.min_gamma = 0.7
